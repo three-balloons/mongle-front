@@ -1,4 +1,3 @@
-import { shapeMapper } from '@/api/bubbles/mapper';
 import {
     mockedCreateBubble,
     mockedDeleteBubble,
@@ -17,20 +16,19 @@ export const bubbleHandlers = [
         const authorizationHeader = request.headers.get('Authorization');
         const accessToken = checkIsValidAccessToken(authorizationHeader);
         if (typeof accessToken !== 'string') return accessToken;
-        // const url = new URL(request.url.toString());
-        // const workspaceId = url.searchParams.get('workspaceId');
+
+        if (!request.headers.get('workspaceId'))
+            return HttpResponse.json({
+                code: 'WORKSPACE_NOT_FOUND',
+                message: '작업공간이 존재하지 않습니다',
+                data: null,
+            });
         const data = mockedGetAllBubbles;
 
         return HttpResponse.json({
             code: 'OK',
             message: 'OK',
-            data: data.map((bubble) => {
-                return {
-                    ...bubble,
-                    shapes: [...(bubble.shapes?.map((shape) => shapeMapper(shape)) ?? [])],
-                    nameSizeInCanvas: 30,
-                };
-            }),
+            data: data,
         });
     }),
     // getBubblesAPI
@@ -45,13 +43,7 @@ export const bubbleHandlers = [
         return HttpResponse.json({
             code: 'OK',
             message: 'OK',
-            data: data.map((bubble) => {
-                return {
-                    ...bubble,
-                    shapes: [...(bubble.shapes?.map((shape) => shapeMapper(shape)) ?? [])],
-                    nameSizeInCanvas: 30,
-                };
-            }),
+            data: data,
         });
     }),
     // deleteBubbleAPI
@@ -79,11 +71,7 @@ export const bubbleHandlers = [
         return HttpResponse.json({
             code: 'OK',
             message: 'OK',
-            data: {
-                ...data,
-                shapes: [...(data.shapes?.map((shape) => shapeMapper(shape)) ?? [])],
-                nameSizeInCanvas: 30,
-            },
+            data: data,
         });
     }),
     http.put(`${API_URL}/bubbles/:bubbleId`, async ({ request }) => {

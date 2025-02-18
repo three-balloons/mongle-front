@@ -1,5 +1,60 @@
 import { CreateBubbleRes, GetAllBubbleRes, GetBubbleRes, UpdateBubbleRes } from '@/api/bubbles/type';
+import { curveEncoding } from '@/api/curves/mapper';
 
+const mockedPos = [
+    {
+        x: 123,
+        y: 123,
+        isVisible: true,
+    },
+    {
+        x: 133,
+        y: 133,
+        isVisible: true,
+    },
+    {
+        x: 143,
+        y: 143,
+        isVisible: true,
+    },
+    {
+        x: 143,
+        y: 103,
+        isVisible: true,
+    },
+
+    {
+        x: 133,
+        y: 93,
+        isVisible: true,
+    },
+    {
+        x: 143,
+        y: 53,
+        isVisible: true,
+    },
+    {
+        x: 143,
+        y: 23,
+        isVisible: true,
+    },
+    {
+        x: 140,
+        y: 3,
+        isVisible: true,
+    },
+    {
+        x: 140,
+        y: 3,
+        isVisible: true,
+    },
+    {
+        x: 130,
+        y: -23,
+        isVisible: true,
+    },
+];
+export const mockedPosition = curveEncoding(mockedPos);
 export const mockedGetAllBubbles: GetAllBubbleRes = [
     {
         path: '/몽글',
@@ -12,7 +67,7 @@ export const mockedGetAllBubbles: GetAllBubbleRes = [
         shapes: [
             {
                 type: 'curve',
-                position: '09BB0109C00107C70100DA01F9E701F9EB01',
+                position: mockedPosition,
                 id: 1,
                 config: {
                     color: '#004A99',
@@ -32,7 +87,7 @@ export const mockedGetAllBubbles: GetAllBubbleRes = [
         shapes: [
             {
                 type: 'curve',
-                position: '09BB0109C00107C70100DA01F9E701F9EB01',
+                position: mockedPosition,
                 id: 2,
                 config: {
                     color: 'red',
@@ -54,7 +109,7 @@ export const mockedGetBubbles: GetBubbleRes = [
         shapes: [
             {
                 type: 'curve',
-                position: '09BB0109C00107C70100DA01F9E701F9EB01',
+                position: mockedPosition,
                 id: 1,
                 config: {
                     color: '#004A99',
@@ -74,7 +129,7 @@ export const mockedGetBubbles: GetBubbleRes = [
         shapes: [
             {
                 type: 'curve',
-                position: '09BB0109C00107C70100DA01F9E701F9EB01',
+                position: mockedPosition,
                 id: 2,
                 config: {
                     color: 'red',
