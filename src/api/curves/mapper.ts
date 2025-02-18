@@ -1,3 +1,4 @@
+import { arrayBufferToBase64, base64ToArrayBuffer } from '@/util/base64';
 import { WORKSPACE_INNER_SIZE } from '@/util/constant';
 
 /**
@@ -5,41 +6,38 @@ import { WORKSPACE_INNER_SIZE } from '@/util/constant';
  * y: 2bytes
  * isVisible: 1bytes
  * */
-export const curveEncoding = (position: Curve2D): string => {
+export const curveEncoding = (position: Curve2D) => {
     const buffer = new ArrayBuffer(position.length * 5);
     const view = new DataView(buffer);
 
     position.forEach(({ x, y, isVisible }, index) => {
-        view.setUint16(index * 5, Math.floor(x / WORKSPACE_INNER_SIZE), true);
-        view.setUint16(index * 5 + 2, Math.floor(y / WORKSPACE_INNER_SIZE), true);
+        const xx = (x + WORKSPACE_INNER_SIZE / 2) % WORKSPACE_INNER_SIZE;
+        const yy = (y + WORKSPACE_INNER_SIZE / 2) % WORKSPACE_INNER_SIZE;
+        view.setUint8(index * 5, Math.floor(xx / 64));
+        view.setUint8(index * 5 + 1, Math.floor(xx % 64));
+        view.setUint8(index * 5 + 2, Math.floor(yy / 64));
+        view.setUint8(index * 5 + 3, Math.floor(yy % 64));
         view.setUint8(index * 5 + 4, isVisible ? 1 : 0);
     });
-    const uint8Array = new Uint8Array(buffer);
-    let binary = '';
-    uint8Array.forEach((byte) => {
-        binary += String.fromCharCode(byte);
-    });
-    return window.btoa(binary);
+    const ret = arrayBufferToBase64(buffer);
+    return ret;
 };
 
 export const curveDecoding = (base64: string): Curve2D => {
-    const binaryString = window.atob(base64);
-    const length = binaryString.length;
-    const buffer = new ArrayBuffer(length);
-    const view = new Uint8Array(buffer);
-
-    for (let i = 0; i < length; i++) {
-        view[i] = binaryString.charCodeAt(i);
-    }
+    const buffer = base64ToArrayBuffer(base64);
 
     const dataView = new DataView(buffer);
     const position: Curve2D = [];
-    const positionLength = buffer.byteLength / 5;
+    const positionLength = Math.floor(buffer.byteLength / 5);
 
+    console.log(buffer.byteLength, positionLength, 'positionLength');
     for (let i = 0; i < positionLength; i++) {
+        const xx = dataView.getUint8(i * 5) * 64 + dataView.getUint8(i * 5 + 1) - WORKSPACE_INNER_SIZE / 2;
+        const yy = dataView.getUint8(i * 5 + 2) * 64 + dataView.getUint8(i * 5 + 3) - WORKSPACE_INNER_SIZE / 2;
+
         position.push({
-            x: dataView.getUint16(i * 5, true),
-            y: dataView.getUint16(i * 5, true),
+            x: xx,
+            y: yy,
             isVisible: dataView.getUint8(i * 5 + 4) == 1 ? true : false,
         });
     }
