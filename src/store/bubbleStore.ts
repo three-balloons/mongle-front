@@ -76,7 +76,10 @@ export const useBubbleStore = createStore<Store>((set, get) => ({
         const { bubbleTreeRoot, getBubbles } = get();
         const currentNode: BubbleTreeNode = node ? node : bubbleTreeRoot;
         let ret: Array<Bubble> = [];
-        if (currentNode.children.length == 0 && currentNode.this) return [currentNode.this];
+        if (currentNode.children.length == 0) {
+            if (currentNode == bubbleTreeRoot) return [];
+            else return [currentNode.this];
+        }
         currentNode.children.forEach((child) => {
             if (currentNode != bubbleTreeRoot && currentNode.this) ret = [currentNode.this, ...ret];
             ret = [...ret, ...getBubbles(child)];

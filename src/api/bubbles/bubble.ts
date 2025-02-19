@@ -22,7 +22,7 @@ import { NAME_SIZE_IN_CANVAS } from '@/util/constant';
 export const getAllBubblesAPI = async ({ workspaceId, depth }: GetAllBubbleReq): Promise<Bubble[]> => {
     try {
         const res = await mongleApi.get<GetAllBubbleRes, 'INAPPROPRIATE_DEPTH'>(
-            `/bubbles/${depth ? '?depth=' + depth.toString() : ''}`,
+            `/bubbles${depth ? '/?depth=' + depth.toString() : ''}`,
             {
                 headers: {
                     workspaceId: workspaceId,
