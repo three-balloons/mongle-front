@@ -91,7 +91,6 @@ export const RendererProvider: React.FC<RendererProviderProps> = ({ children, is
         // Rerenders when canvas view changes
         useViewStore.subscribe((state) => {
             if (state.cameraView) {
-                console.log('reRender');
                 reRender();
             }
         });
@@ -401,7 +400,6 @@ export const RendererProvider: React.FC<RendererProviderProps> = ({ children, is
             //     context.shadowBlur = 0;
             bubble.shapes.forEach((shape) => {
                 if (shape.type === 'curve') {
-                    console.log(shape);
                     const curve = shape;
                     const c = bubble2globalWithCurve(curve.position, bubbleView);
 

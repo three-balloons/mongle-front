@@ -30,7 +30,6 @@ export const curveDecoding = (base64: string): Curve2D => {
     const position: Curve2D = [];
     const positionLength = Math.floor(buffer.byteLength / 5);
 
-    console.log(buffer.byteLength, positionLength, 'positionLength');
     for (let i = 0; i < positionLength; i++) {
         const xx = dataView.getUint8(i * 5) * 64 + dataView.getUint8(i * 5 + 1) - WORKSPACE_INNER_SIZE / 2;
         const yy = dataView.getUint8(i * 5 + 2) * 64 + dataView.getUint8(i * 5 + 3) - WORKSPACE_INNER_SIZE / 2;

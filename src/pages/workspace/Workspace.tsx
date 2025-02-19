@@ -77,7 +77,6 @@ export const Workspace = ({ workspaceId }: WorkspaceProps) => {
                 width: isShowExplorer ? window.innerWidth - 150 : window.innerWidth,
                 height: window.innerHeight - 100,
             });
-            console.log('canvasSize', canvasSize);
         };
 
         window.addEventListener('resize', handleResize);

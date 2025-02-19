@@ -5,7 +5,6 @@ export const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
 };
 
 export const base64ToArrayBuffer = (base64: string): ArrayBuffer => {
-    console.log('test', base64, typeof base64);
     base64 = base64.replace(/-/g, '+').replace(/_/g, '/');
     const binaryString = atob(base64);
     const uint8Array = new Uint8Array(binaryString.length);
