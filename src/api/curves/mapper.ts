@@ -1,5 +1,5 @@
 import { arrayBufferToBase64, base64ToArrayBuffer } from '@/util/base64';
-import { WORKSPACE_INNER_SIZE } from '@/util/constant';
+import { WORKSPACE_INNER_HALF_SIZE, WORKSPACE_INNER_SIZE } from '@/util/constant';
 
 /**
  * x: 2bytes
@@ -11,8 +11,8 @@ export const curveEncoding = (position: Curve2D) => {
     const view = new DataView(buffer);
 
     position.forEach(({ x, y, isVisible }, index) => {
-        const xx = (x + WORKSPACE_INNER_SIZE / 2) % WORKSPACE_INNER_SIZE;
-        const yy = (y + WORKSPACE_INNER_SIZE / 2) % WORKSPACE_INNER_SIZE;
+        const xx = (x + WORKSPACE_INNER_HALF_SIZE) % WORKSPACE_INNER_SIZE;
+        const yy = (y + WORKSPACE_INNER_HALF_SIZE) % WORKSPACE_INNER_SIZE;
         view.setUint8(index * 5, Math.floor(xx / 64));
         view.setUint8(index * 5 + 1, Math.floor(xx % 64));
         view.setUint8(index * 5 + 2, Math.floor(yy / 64));
@@ -31,8 +31,8 @@ export const curveDecoding = (base64: string): Curve2D => {
     const positionLength = Math.floor(buffer.byteLength / 5);
 
     for (let i = 0; i < positionLength; i++) {
-        const xx = dataView.getUint8(i * 5) * 64 + dataView.getUint8(i * 5 + 1) - WORKSPACE_INNER_SIZE / 2;
-        const yy = dataView.getUint8(i * 5 + 2) * 64 + dataView.getUint8(i * 5 + 3) - WORKSPACE_INNER_SIZE / 2;
+        const xx = dataView.getUint8(i * 5) * 64 + dataView.getUint8(i * 5 + 1) - WORKSPACE_INNER_HALF_SIZE;
+        const yy = dataView.getUint8(i * 5 + 2) * 64 + dataView.getUint8(i * 5 + 3) - WORKSPACE_INNER_HALF_SIZE;
 
         position.push({
             x: xx,

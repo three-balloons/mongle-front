@@ -1,7 +1,7 @@
 import { useLog } from '@/objects/log/useLog';
 import { useRenderer } from '@/objects/renderer/useRenderer';
 // import { useConfigStore } from '@/store/configStore';
-import { MINIMUN_RENDERED_BUBBLE_SIZE } from '@/util/constant';
+import { MINIMUN_RENDERED_BUBBLE_SIZE, WORKSPACE_INNER_HALF_SIZE } from '@/util/constant';
 import { global2bubbleWithRect, rect2View, view2Point } from '@/util/coordSys/conversion';
 // import { getParentPath } from '@/util/path/path';
 import { /*isCollisionWithRect, */ isCollisionWithRectExceptIncluding } from '@/util/shapes/collision';
@@ -100,10 +100,10 @@ export const useBubbleGun = () => {
         const currentRect = view2BubbleWithRect(bubbleRect, cameraView, createdBubblePathRef.current);
         if (
             createdBubblePathRef.current != '/' &&
-            (currentRect.top < -100 ||
-                currentRect.top + currentRect.height > 100 ||
-                currentRect.left < -100 ||
-                currentRect.left + currentRect.width > 100)
+            (currentRect.top < -WORKSPACE_INNER_HALF_SIZE ||
+                currentRect.top + currentRect.height >= WORKSPACE_INNER_HALF_SIZE ||
+                currentRect.left < -WORKSPACE_INNER_HALF_SIZE ||
+                currentRect.left + currentRect.width >= WORKSPACE_INNER_HALF_SIZE)
         )
             isCollision = true;
         if (isCollision) {

@@ -4,7 +4,7 @@ import { useMutation } from '@tanstack/react-query';
 import { createBubbleAPI, deleteBubbleAPI } from '@/api/bubbles/bubble';
 import { useLogStore } from '@/store/useLogStore';
 import { isLogBubble, isLogCurve } from '@/util/typeGuard';
-import { updateCurveAPI } from '@/api/curves/curve';
+import { createCurveAPI, deleteCurveAPI, updateCurveAPI } from '@/api/curves/curve';
 
 interface CurveMutationProps {
     workspaceId: string;
@@ -66,7 +66,7 @@ export const useLogSender = () => {
     /* Curves */
     const { mutate: createCurveMutation } = useMutation({
         mutationFn: ({ workspaceId, bubbleId, curve }: CurveMutationProps) =>
-            updateCurveAPI({ workspaceId, bubbleId, curve }),
+            createCurveAPI({ workspaceId, bubbleId, curve }),
     });
 
     const { mutate: updateCurveMutation } = useMutation({
@@ -75,11 +75,10 @@ export const useLogSender = () => {
     });
 
     const { mutate: deleteCurveMutation } = useMutation({
-        mutationFn: ({ workspaceId, bubbleId, curve }: CurveMutationProps) =>
-            updateCurveAPI({
+        mutationFn: ({ workspaceId, curve }: CurveMutationProps) =>
+            deleteCurveAPI({
                 workspaceId,
-                bubbleId,
-                curve,
+                curveId: curve.id,
             }),
     });
 

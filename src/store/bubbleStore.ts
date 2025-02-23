@@ -1,5 +1,11 @@
 import { createStore } from '@/store/store';
-import { BUBBLE_BORDER_WIDTH, RENDERED_FONT_SIZE, UNNAMED } from '@/util/constant';
+import {
+    BUBBLE_BORDER_WIDTH,
+    RENDERED_FONT_SIZE,
+    UNNAMED,
+    WORKSPACE_INNER_HALF_SIZE,
+    WORKSPACE_INNER_SIZE,
+} from '@/util/constant';
 import {
     bubble2globalWithRect,
     global2bubbleWithRect,
@@ -340,10 +346,10 @@ export const useBubbleStore = createStore<Store>((set, get) => ({
                 parent = findBubbleByPath(path);
                 if (parent == undefined) return undefined;
                 ret.path = parent.path;
-                ret.top = (parent.height * (100 + ret.top)) / 200 + parent.top;
-                ret.left = (parent.width * (100 + ret.left)) / 200 + parent.left;
-                ret.height = (parent.height * ret.height) / 200;
-                ret.width = (parent.width * ret.width) / 200;
+                ret.top = (parent.height * (WORKSPACE_INNER_HALF_SIZE + ret.top)) / WORKSPACE_INNER_SIZE + parent.top;
+                ret.left = (parent.width * (WORKSPACE_INNER_HALF_SIZE + ret.left)) / WORKSPACE_INNER_SIZE + parent.left;
+                ret.height = (parent.height * ret.height) / WORKSPACE_INNER_SIZE;
+                ret.width = (parent.width * ret.width) / WORKSPACE_INNER_SIZE;
             }
             return ret;
         }

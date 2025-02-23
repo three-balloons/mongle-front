@@ -9,4 +9,5 @@ export const EXPLORER_MIN_WIDTH = 100;
 export const EXPLORER_MAX_WIDTH = 300;
 
 export const WORKSPACE_RETENTION_PERIOD = 15;
-export const WORKSPACE_INNER_SIZE = 2048; // workspace 내부 좌표계 domain [0, 2048)
+export const WORKSPACE_INNER_HALF_SIZE = 1024;
+export const WORKSPACE_INNER_SIZE = WORKSPACE_INNER_HALF_SIZE * 2; // workspace 내부 좌표계 domain [-1024, 1024)

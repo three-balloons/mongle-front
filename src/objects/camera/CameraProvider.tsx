@@ -1,6 +1,7 @@
 import { useBubbleStore } from '@/store/bubbleStore';
 import { useConfigStore } from '@/store/configStore';
 import { useViewStore } from '@/store/viewStore';
+import { WORKSPACE_INNER_HALF_SIZE, WORKSPACE_INNER_SIZE } from '@/util/constant';
 import { bubble2globalWithRect, global2bubbleWithRect } from '@/util/coordSys/conversion';
 import { getLCAPath, getParentPath } from '@/util/path/path';
 import { easeInCubic, easeOutCubic } from '@/util/transition/transtion';
@@ -84,10 +85,14 @@ export const CameraProvider: React.FC<CameraProviderProps> = ({ children, height
         while (cameraPath && cameraPath != '/') {
             const cameraBubble = findBubbleByPath(cameraPath);
             if (cameraBubble == undefined) return undefined;
-            newCameraPos.top = (cameraBubble.height * (100 + newCameraPos.top)) / 200 + cameraBubble.top;
-            newCameraPos.left = (cameraBubble.width * (100 + newCameraPos.left)) / 200 + cameraBubble.left;
-            newCameraPos.height = (cameraBubble.height * newCameraPos.height) / 200;
-            newCameraPos.width = (cameraBubble.width * newCameraPos.width) / 200;
+            newCameraPos.top =
+                (cameraBubble.height * (WORKSPACE_INNER_HALF_SIZE + newCameraPos.top)) / WORKSPACE_INNER_SIZE +
+                cameraBubble.top;
+            newCameraPos.left =
+                (cameraBubble.width * (WORKSPACE_INNER_HALF_SIZE + newCameraPos.left)) / WORKSPACE_INNER_SIZE +
+                cameraBubble.left;
+            newCameraPos.height = (cameraBubble.height * newCameraPos.height) / WORKSPACE_INNER_SIZE;
+            newCameraPos.width = (cameraBubble.width * newCameraPos.width) / WORKSPACE_INNER_SIZE;
             cameraPath = getParentPath(cameraPath);
         }
         const parentPath = getParentPath(bubblePath);
@@ -143,7 +148,10 @@ export const CameraProvider: React.FC<CameraProviderProps> = ({ children, height
 
         while (
             path != '/' &&
-            (pos.top < -100 || pos.left < -100 || pos.top + pos.height > 100 || pos.left + pos.width > 100)
+            (pos.top < -WORKSPACE_INNER_HALF_SIZE ||
+                pos.left < -WORKSPACE_INNER_HALF_SIZE ||
+                pos.top + pos.height >= WORKSPACE_INNER_HALF_SIZE ||
+                pos.left + pos.width >= WORKSPACE_INNER_HALF_SIZE)
         ) {
             pos = bubble2globalWithRect(pos, findBubbleByPath(path));
             // TODO prevPos 설정 로직 분리
@@ -187,10 +195,14 @@ export const CameraProvider: React.FC<CameraProviderProps> = ({ children, height
             while (prevPath && prevPath !== '/' && prevPath !== lcaPath) {
                 const cameraBubble = findBubbleByPath(prevPath);
                 if (cameraBubble == undefined) return undefined;
-                prevPos.top = (cameraBubble.height * (100 + prevPos.top)) / 200 + cameraBubble.top;
-                prevPos.left = (cameraBubble.width * (100 + prevPos.left)) / 200 + cameraBubble.left;
-                prevPos.height = (cameraBubble.height * prevPos.height) / 200;
-                prevPos.width = (cameraBubble.width * prevPos.width) / 200;
+                prevPos.top =
+                    (cameraBubble.height * (WORKSPACE_INNER_HALF_SIZE + prevPos.top)) / WORKSPACE_INNER_SIZE +
+                    cameraBubble.top;
+                prevPos.left =
+                    (cameraBubble.width * (WORKSPACE_INNER_HALF_SIZE + prevPos.left)) / WORKSPACE_INNER_SIZE +
+                    cameraBubble.left;
+                prevPos.height = (cameraBubble.height * prevPos.height) / WORKSPACE_INNER_SIZE;
+                prevPos.width = (cameraBubble.width * prevPos.width) / WORKSPACE_INNER_SIZE;
                 prevPath = getParentPath(prevPath);
             }
             // currentPos를 lca까지 올림
@@ -199,10 +211,14 @@ export const CameraProvider: React.FC<CameraProviderProps> = ({ children, height
             while (currentPath && currentPath !== '/' && currentPath !== lcaPath) {
                 const cameraBubble = findBubbleByPath(currentPath);
                 if (cameraBubble == undefined) return undefined;
-                currentPos.top = (cameraBubble.height * (100 + currentPos.top)) / 200 + cameraBubble.top;
-                currentPos.left = (cameraBubble.width * (100 + currentPos.left)) / 200 + cameraBubble.left;
-                currentPos.height = (cameraBubble.height * currentPos.height) / 200;
-                currentPos.width = (cameraBubble.width * currentPos.width) / 200;
+                currentPos.top =
+                    (cameraBubble.height * (WORKSPACE_INNER_HALF_SIZE + currentPos.top)) / WORKSPACE_INNER_SIZE +
+                    cameraBubble.top;
+                currentPos.left =
+                    (cameraBubble.width * (WORKSPACE_INNER_HALF_SIZE + currentPos.left)) / WORKSPACE_INNER_SIZE +
+                    cameraBubble.left;
+                currentPos.height = (cameraBubble.height * currentPos.height) / WORKSPACE_INNER_SIZE;
+                currentPos.width = (cameraBubble.width * currentPos.width) / WORKSPACE_INNER_SIZE;
                 currentPath = getParentPath(currentPath);
             }
             if (prevPos && currentPos) {

@@ -12,6 +12,7 @@ import { useConfigStore } from '@/store/configStore';
 import { useCamera } from '@/objects/camera/useCamera';
 import { useBubbleStore } from '@/store/bubbleStore';
 import { useLogStore } from '@/store/useLogStore';
+import { WORKSPACE_INNER_HALF_SIZE, WORKSPACE_INNER_SIZE } from '@/util/constant';
 
 export const ControlSelect = () => {
     const { cameraView } = useViewStore((state) => state);
@@ -29,10 +30,11 @@ export const ControlSelect = () => {
             {
                 ...cameraView,
                 pos: {
-                    left: cameraView.pos.left + (cameraView.pos.width * intensity) / 200,
-                    top: cameraView.pos.top + (cameraView.pos.height * intensity) / 200,
-                    width: (cameraView.pos.width * (100 - intensity)) / 100,
-                    height: (cameraView.pos.height * (100 - intensity)) / 100,
+                    left: cameraView.pos.left + (cameraView.pos.width * intensity) / WORKSPACE_INNER_SIZE,
+                    top: cameraView.pos.top + (cameraView.pos.height * intensity) / WORKSPACE_INNER_SIZE,
+                    width: (cameraView.pos.width * (WORKSPACE_INNER_HALF_SIZE - intensity)) / WORKSPACE_INNER_HALF_SIZE,
+                    height:
+                        (cameraView.pos.height * (WORKSPACE_INNER_HALF_SIZE - intensity)) / WORKSPACE_INNER_HALF_SIZE,
                 },
             },
             { ...cameraView },

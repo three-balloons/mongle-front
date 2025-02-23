@@ -7,6 +7,7 @@ import { curve2Rect } from '@/util/shapes/conversion';
 // import { createBubbleAPI } from '@/api/bubble';
 // import { useParams } from 'react-router-dom';
 import { useBubbleStore } from '@/store/bubbleStore';
+import { WORKSPACE_INNER_HALF_SIZE } from '@/util/constant';
 
 // functions about pen drawing
 // features: draw curve
@@ -71,7 +72,10 @@ export const useDrawer = () => {
 
                 if (
                     getNewCurvePath() !== '/' &&
-                    (position.x < -100 || position.x > 100 || position.y < -100 || position.y > 100)
+                    (position.x < -WORKSPACE_INNER_HALF_SIZE ||
+                        position.x >= WORKSPACE_INNER_HALF_SIZE ||
+                        position.y < -WORKSPACE_INNER_HALF_SIZE ||
+                        position.y >= WORKSPACE_INNER_HALF_SIZE)
                 ) {
                     return;
                 }
