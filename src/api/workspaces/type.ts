@@ -1,3 +1,5 @@
+// TODO workspace response will be included userId
+
 /** getWorkspaceAPI */
 export type GetWorkspaceParams = {
     workspaceId: string;
