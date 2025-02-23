@@ -6,7 +6,7 @@ import { useBubbleStore } from '@/store/bubbleStore';
 import { useConfigStore } from '@/store/configStore';
 import { useViewStore } from '@/store/viewStore';
 import {
-    MINIMUN_RENDERED_BUBBLE_SIZE,
+    MINIMUN_RENDERED_BUBBLE_RATE,
     OFF_SCREEN_HEIGHT,
     OFF_SCREEN_WIDTH,
     WORKSPACE_INNER_HALF_SIZE,
@@ -242,6 +242,9 @@ export const RendererProvider: React.FC<RendererProviderProps> = ({ children, is
         }
     };
 
+    /**
+     * rendering in main layer
+     */
     const renderer = () => {
         if (!mainLayerRef.current) {
             return;
@@ -282,7 +285,7 @@ export const RendererProvider: React.FC<RendererProviderProps> = ({ children, is
     const bubbleRender = (bubble: Bubble) => {
         const cameraView = getCameraView();
         const ratio = getRatioWithCamera(bubble, cameraView);
-        if (ratio && ratio * cameraView.size.x < MINIMUN_RENDERED_BUBBLE_SIZE) {
+        if (ratio && ratio < MINIMUN_RENDERED_BUBBLE_RATE) {
             return;
         }
         if (!mainLayerRef.current) {
@@ -410,7 +413,7 @@ export const RendererProvider: React.FC<RendererProviderProps> = ({ children, is
             context.clearRect(0, 0, canvas.width, canvas.height);
             getBubbles().forEach((bubble) => {
                 const ratio = getRatioWithCamera(bubble, cameraView);
-                if (ratio && ratio * cameraView.size.x < MINIMUN_RENDERED_BUBBLE_SIZE) {
+                if (ratio && ratio * cameraView.size.x < MINIMUN_RENDERED_BUBBLE_RATE) {
                     return;
                 }
                 const bubbleView = descendant2child(bubble, cameraView.path);

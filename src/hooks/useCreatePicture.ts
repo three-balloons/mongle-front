@@ -1,8 +1,8 @@
 import { usePicture } from '@/objects/picture/usePicture';
 import { useRenderer } from '@/objects/renderer/useRenderer';
 import { useBubbleStore } from '@/store/bubbleStore';
-import { MINIMUN_RENDERED_BUBBLE_SIZE } from '@/util/constant';
-import { rect2View, view2Point } from '@/util/coordSys/conversion';
+import { MINIMUN_RENDERED_BUBBLE_RATE } from '@/util/constant';
+import { view2Point } from '@/util/coordSys/conversion';
 
 import { useRef } from 'react';
 
@@ -18,6 +18,7 @@ export const useCreatePicture = () => {
     const { setDraggingRect, getDraggingRect, reRender } = useRenderer();
     const view2BubbleWithRect = useBubbleStore((state) => state.view2BubbleWithRect);
     const findBubbleByPath = useBubbleStore((state) => state.findBubbleByPath);
+    const getRatioWithCamera = useBubbleStore((state) => state.getRatioWithCamera);
     const { getCreatingPicture } = usePicture();
 
     const startCreatePicture = (cameraView: ViewCoord, currentPosition: Vector2D, path: string) => {
@@ -58,8 +59,8 @@ export const useCreatePicture = () => {
     const finishCreatePicture = (cameraView: ViewCoord) => {
         const bubbleRect = getDraggingRect();
         if (!bubbleRect) return;
-        const { height, width } = rect2View(bubbleRect, cameraView);
-        if (height < MINIMUN_RENDERED_BUBBLE_SIZE || width < MINIMUN_RENDERED_BUBBLE_SIZE) {
+        const ratio = getRatioWithCamera({ ...bubbleRect, path: creatingPicturePathRef.current } as Bubble, cameraView);
+        if (!ratio || ratio * 2 < MINIMUN_RENDERED_BUBBLE_RATE) {
             console.error('생성하려는 사진의 크기가 너무 작습니다');
             return;
         }

@@ -361,27 +361,14 @@ export const useBubbleStore = createStore<Store>((set, get) => ({
      * renaming? : getRatioWithCameraForRendering
      */
     getRatioWithCamera: (bubble: Bubble, cameraView: ViewCoord) => {
-        const { findBubbleByPath } = get();
+        const { descendant2child } = get();
         const depth = getPathDifferentDepth(cameraView.path, bubble.path);
         if (depth == undefined) return undefined;
         // TODO 0 이하의 경우 고려 안함
-        if (depth == 0) return 200 / cameraView.pos.width;
-        if (depth == 1) return bubble.width / cameraView.pos.width;
-        else if (depth > 1) {
-            let path: string | undefined = bubble.path;
-            let ret = bubble.width;
-
-            let parent: Bubble | undefined;
-            for (let i = 1; i < depth; i++) {
-                path = getParentPath(path);
-                if (path == undefined) return undefined;
-                parent = findBubbleByPath(path);
-                if (parent == undefined) return undefined;
-                ret = (ret * parent.width) / 200;
-            }
-            ret = ret / cameraView.pos.width;
-            return ret;
-        }
+        const bubbleRect = descendant2child(bubble, cameraView.path);
+        if (!bubbleRect)
+            return Math.max(WORKSPACE_INNER_SIZE / cameraView.pos.width, WORKSPACE_INNER_SIZE / cameraView.pos.height);
+        return Math.max(bubbleRect.width / cameraView.pos.width, bubbleRect.height / cameraView.pos.height);
     },
     /**
      * 실제 View 위의 좌표를 bubble 내의 좌표로 변환

@@ -1,8 +1,8 @@
 import { useLog } from '@/objects/log/useLog';
 import { useRenderer } from '@/objects/renderer/useRenderer';
 // import { useConfigStore } from '@/store/configStore';
-import { MINIMUN_RENDERED_BUBBLE_SIZE, WORKSPACE_INNER_HALF_SIZE } from '@/util/constant';
-import { global2bubbleWithRect, rect2View, view2Point } from '@/util/coordSys/conversion';
+import { MINIMUN_RENDERED_BUBBLE_RATE, WORKSPACE_INNER_HALF_SIZE } from '@/util/constant';
+import { global2bubbleWithRect, view2Point } from '@/util/coordSys/conversion';
 // import { getParentPath } from '@/util/path/path';
 import { /*isCollisionWithRect, */ isCollisionWithRectExceptIncluding } from '@/util/shapes/collision';
 // import { subVector2D } from '@/util/shapes/operator';
@@ -33,13 +33,12 @@ export const useBubbleGun = () => {
     const descendant2child = useBubbleStore((state) => state.descendant2child);
     // const view2BubbleWithVector2D = useBubbleStore((state) => state.view2BubbleWithVector2D);
     const view2BubbleWithRect = useBubbleStore((state) => state.view2BubbleWithRect);
+    const getRatioWithCamera = useBubbleStore((state) => state.getRatioWithCamera);
     const getChildBubbles = useBubbleStore((state) => state.getChildBubbles);
     const getDescendantBubbles = useBubbleStore((state) => state.getDescendantBubbles);
     const getAndDecreaseNextBubbleId = useBubbleStore((state) => state.getAndDecreaseNextBubbleId);
-    const { /*bubbleTransitAnimation, */ reRender } = useRenderer();
-    // const { workspaceId } = useParams<{ workspaceId: string }>();
 
-    const { setDraggingRect, getDraggingRect } = useRenderer();
+    const { setDraggingRect, getDraggingRect, reRender } = useRenderer();
     /* logs */
     const { commitLog, addBubbleCreationLog /*addBubbleUpdateLog*/ } = useLog();
 
@@ -88,8 +87,8 @@ export const useBubbleGun = () => {
     const finishCreateBubble = useCallback((cameraView: ViewCoord) => {
         const bubbleRect = getDraggingRect();
         if (!bubbleRect) return;
-        const { height, width } = rect2View(bubbleRect, cameraView);
-        if (height < MINIMUN_RENDERED_BUBBLE_SIZE || width < MINIMUN_RENDERED_BUBBLE_SIZE) {
+        const ratio = getRatioWithCamera({ ...bubbleRect, path: createdBubblePathRef.current } as Bubble, cameraView);
+        if (!ratio || ratio * 2 < MINIMUN_RENDERED_BUBBLE_RATE) {
             console.error('생성하려는 버블의 크기가 너무 작습니다');
             return;
         }
