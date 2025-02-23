@@ -49,9 +49,7 @@ export const isBubble = (obj: unknown): obj is Bubble => {
         typeof (obj as Bubble).path === 'string' &&
         typeof (obj as Bubble).name === 'string' &&
         Array.isArray((obj as Bubble).shapes) &&
-        (obj as Bubble).shapes.every(isCurve) &&
-        typeof (obj as Bubble).isBubblized === 'boolean' &&
-        typeof (obj as Bubble).isVisible === 'boolean'
+        (obj as Bubble).shapes.every(isCurve)
     );
 };
 

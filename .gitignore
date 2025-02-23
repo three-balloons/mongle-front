@@ -44,6 +44,8 @@ out/
 src/main/**/out/
 src/test/**/out/
 
+# mock 
+src/mocks/
 
 # env files
 *.env

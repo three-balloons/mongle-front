@@ -17,7 +17,7 @@ export const useCreatePicture = () => {
     const setFocusBubblePath = useBubbleStore((state) => state.setFocusBubblePath);
     const { setDraggingRect, getDraggingRect, reRender } = useRenderer();
     const view2BubbleWithRect = useBubbleStore((state) => state.view2BubbleWithRect);
-    const findBubble = useBubbleStore((state) => state.findBubble);
+    const findBubbleByPath = useBubbleStore((state) => state.findBubbleByPath);
     const { getCreatingPicture } = usePicture();
 
     const startCreatePicture = (cameraView: ViewCoord, currentPosition: Vector2D, path: string) => {
@@ -78,7 +78,7 @@ export const useCreatePicture = () => {
     };
 
     const addPictureInBubble = (picture: Picture, path: string) => {
-        const bubble = findBubble(path);
+        const bubble = findBubbleByPath(path);
         if (bubble) {
             bubble.shapes = [...bubble.shapes, picture];
         }

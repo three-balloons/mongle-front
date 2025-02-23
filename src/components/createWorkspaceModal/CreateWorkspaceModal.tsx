@@ -6,7 +6,7 @@ import { cn } from '@/util/cn';
 import { useEffect, useState } from 'react';
 import Select from '@/headless/select/Select';
 import { ReactComponent as ModifyIcon } from '@/assets/icon/modify.svg';
-import { createWorkspaceAPI } from '@/api/workspace';
+import { createWorkspaceAPI } from '@/api/workspaces/workspace';
 import { useMutation } from '@tanstack/react-query';
 import { queryClient } from '@/react-query/quertClient';
 import { UNNAMED } from '@/util/constant';
@@ -43,10 +43,7 @@ export const CreateWorkspaceModal = ({ className }: CreateWorkspaceModalProps) =
         createWorkspace(
             { name: name, theme: theme as string },
             {
-                onSuccess: () => {
-                    console.log('저장 성공');
-                    queryClient.invalidateQueries({ queryKey: ['workspaces'] });
-                },
+                onSuccess: () => queryClient.invalidateQueries({ queryKey: ['workspaces'] }),
             },
         );
         return;

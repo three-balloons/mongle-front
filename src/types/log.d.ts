@@ -3,11 +3,11 @@
 
 type LogBubble = {
     object: Bubble;
-    childrenPaths: string[]; // create, delete일때 사용
+    childrenIds: number[]; // create, delete일때 사용
 };
 type LogCurve = {
     object: Curve;
-    path: string;
+    bubbleId: number;
 };
 
 type LogCamera = {

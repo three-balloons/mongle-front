@@ -13,20 +13,24 @@ type State = {
     workspaceId: string | undefined;
     bubbleLabel: number; // bubbleNum
     focusBubblePath: string | undefined;
+    nextBubbleId: number;
     bubbleTreeRoot: BubbleTreeNode;
 };
 
 type Action = {
+    /* TODO new */
     setFocusBubblePath: (path: string | undefined) => void;
     getFocusBubblePath: () => string | undefined;
+    findBubble: (id: number) => Bubble | undefined;
+    findBubbleByPath: (path: string) => Bubble | undefined;
+    getAndDecreaseNextBubbleId: () => number;
     clearAllBubbles: () => void;
     getBubbles: (node?: BubbleTreeNode) => Array<Bubble>;
-    addBubble: (bubble: Bubble, childrenPaths: Array<string>) => void;
+    addBubble: (bubble: Bubble, childrenIds: Array<number>) => void;
     getBubbleLabel: () => number;
     setBubbleLabel: (label: number) => void;
     removeBubble: (bubble: Bubble) => void;
-    updateBubble: (path: string, bubble: Bubble) => void;
-    findBubble: (path: string) => Bubble | undefined;
+    updateBubble: (id: number, bubble: Bubble) => void;
     identifyTouchRegion: (
         cameraView: ViewCoord,
         position: Vector2D,
@@ -41,7 +45,6 @@ type Action = {
     /* 버블 트리 */
     getDescendantBubbles: (path: string) => Array<Bubble>;
     getChildBubbles: (path: string) => Array<Bubble>;
-
     addBubblesInNode: (bubbbles: Array<Bubble>) => void;
 };
 type Store = State & Action;
@@ -49,15 +52,17 @@ type Store = State & Action;
 export const useBubbleStore = createStore<Store>((set, get) => ({
     bubbleLabel: 0,
     focusBubblePath: undefined,
+    nextBubbleId: -1,
     bubbleTreeRoot: {
         name: UNNAMED,
         children: [],
         this: {} as Bubble,
         parent: undefined,
     },
+
     workspaceId: undefined,
-    getFocusBubblePath: () => get().focusBubblePath,
     setFocusBubblePath: (path) => set({ focusBubblePath: path }),
+    getFocusBubblePath: () => get().focusBubblePath,
     clearAllBubbles: () =>
         set({
             bubbleTreeRoot: {
@@ -71,14 +76,17 @@ export const useBubbleStore = createStore<Store>((set, get) => ({
         const { bubbleTreeRoot, getBubbles } = get();
         const currentNode: BubbleTreeNode = node ? node : bubbleTreeRoot;
         let ret: Array<Bubble> = [];
-        if (currentNode.children.length == 0 && currentNode.this) return [currentNode.this];
+        if (currentNode.children.length == 0) {
+            if (currentNode == bubbleTreeRoot) return [];
+            else return [currentNode.this];
+        }
         currentNode.children.forEach((child) => {
             if (currentNode != bubbleTreeRoot && currentNode.this) ret = [currentNode.this, ...ret];
             ret = [...ret, ...getBubbles(child)];
         });
         return ret;
     },
-    addBubble: (bubble: Bubble, childrenPaths: Array<string>) => {
+    addBubble: (bubble: Bubble, childrenIds: Array<number>) => {
         const { bubbleTreeRoot } = get();
         const pathList = pathToList(bubble.path);
         let currentNode: BubbleTreeNode | undefined = bubbleTreeRoot;
@@ -99,14 +107,14 @@ export const useBubbleStore = createStore<Store>((set, get) => ({
             if (prevNode?.children) {
                 newNode.this = bubble;
                 newNode.children = prevNode.children.filter((child) => {
-                    const parentPath = getParentPath(bubble.path);
-                    const path = parentPath === '/' ? '/' + child.name : parentPath + '/' + child.name;
-                    return childrenPaths.find((childPath) => childPath == path);
+                    // const parentPath = getParentPath(bubble.path);
+                    // const path = parentPath === '/' ? '/' + child.name : parentPath + '/' + child.this.id;
+                    return childrenIds.find((childId) => childId == child.this.id);
                 });
                 prevNode.children = prevNode.children.filter((child) => {
-                    const parentPath = getParentPath(bubble.path);
-                    const path = parentPath === '/' ? '/' + child.name : parentPath + '/' + child.name;
-                    const isNewNodeChild = childrenPaths.find((childPath) => childPath == path);
+                    // const parentPath = getParentPath(bubble.path);
+                    // const path = parentPath === '/' ? '/' + child.name : parentPath + '/' + child.name;
+                    const isNewNodeChild = childrenIds.find((childId) => childId == child.this.id);
                     if (isNewNodeChild && child.this) {
                         const parentBubble = prevNode.this;
                         const pos = global2bubbleWithRect(
@@ -185,17 +193,30 @@ export const useBubbleStore = createStore<Store>((set, get) => ({
      * @param path 변환시킬 bubble의 path
      * @param bubble 변환시킬 내용
      */
-    updateBubble: (path: string, bubble: Bubble) => {
+    updateBubble: (id: number, bubble: Bubble) => {
         const { findBubble, getChildBubbles, removeBubble, addBubble } = get();
-        const remove = findBubble(path);
-        const childrenPaths = getChildBubbles(path).map((child) => child.path);
-        if (remove) removeBubble(remove);
-        addBubble(bubble, childrenPaths);
+        const remove = findBubble(id);
+        let childrenIds: number[] = [];
+        if (remove) {
+            childrenIds = getChildBubbles(remove.path).map((child) => child.id);
+            removeBubble(remove);
+        }
+        addBubble(bubble, childrenIds);
     },
-    findBubble: (path: string) => {
+    findBubbleByPath: (path: string) => {
         const { getBubbles } = get();
         if (path == '/') return undefined;
         return getBubbles().find((bubble) => bubble.path == path);
+    },
+    findBubble: (id: number) => {
+        const { getBubbles } = get();
+        return getBubbles().find((bubble) => bubble.id == id);
+    },
+    getAndDecreaseNextBubbleId: () => {
+        const { nextBubbleId } = get();
+        const ret = nextBubbleId;
+        set({ nextBubbleId: nextBubbleId - 1 });
+        return ret;
     },
     /**
      * 버블 안인지 밖인지 테두리인지 판단하는 함수
@@ -206,7 +227,6 @@ export const useBubbleStore = createStore<Store>((set, get) => ({
         const bubbles = getBubbles();
         bubbles.sort((a, b) => getPathDepth(b.path) - getPathDepth(a.path));
         for (const bubble of bubbles) {
-            if (!bubble.isVisible) continue;
             const bubbleView = descendant2child(bubble, cameraView.path);
             if (bubbleView) {
                 const rect = rect2View(
@@ -281,8 +301,10 @@ export const useBubbleStore = createStore<Store>((set, get) => ({
         return findDescendants(currentNode);
     },
     getChildBubbles: (path: string) => {
-        const { bubbleTreeRoot } = get();
-        const pathList = pathToList(path);
+        const { bubbleTreeRoot, findBubbleByPath } = get();
+        const bubble = findBubbleByPath(path);
+        if (!bubble) return [];
+        const pathList = pathToList(bubble.path);
         let currentNode: BubbleTreeNode | undefined = bubbleTreeRoot;
         for (const name of pathList) {
             if (name == '') continue;
@@ -303,7 +325,7 @@ export const useBubbleStore = createStore<Store>((set, get) => ({
      * TODO: 최적화, useBubble에 의존하고 있음 => 의존성 제거 혹은 계산부분 분리 필요
      */
     descendant2child: (descendant: Bubble, ancestorPath: string) => {
-        const { findBubble } = get();
+        const { findBubbleByPath } = get();
         const depth = getPathDifferentDepth(ancestorPath, descendant.path);
         if (depth == undefined) return undefined;
         if (depth <= 0) return undefined; // depth가 0 이하인 경우 render X
@@ -315,7 +337,7 @@ export const useBubbleStore = createStore<Store>((set, get) => ({
             for (let i = 1; i < depth; i++) {
                 const path = getParentPath(ret.path);
                 if (path == undefined) return undefined;
-                parent = findBubble(path);
+                parent = findBubbleByPath(path);
                 if (parent == undefined) return undefined;
                 ret.path = parent.path;
                 ret.top = (parent.height * (100 + ret.top)) / 200 + parent.top;
@@ -333,7 +355,7 @@ export const useBubbleStore = createStore<Store>((set, get) => ({
      * renaming? : getRatioWithCameraForRendering
      */
     getRatioWithCamera: (bubble: Bubble, cameraView: ViewCoord) => {
-        const { findBubble } = get();
+        const { findBubbleByPath } = get();
         const depth = getPathDifferentDepth(cameraView.path, bubble.path);
         if (depth == undefined) return undefined;
         // TODO 0 이하의 경우 고려 안함
@@ -347,7 +369,7 @@ export const useBubbleStore = createStore<Store>((set, get) => ({
             for (let i = 1; i < depth; i++) {
                 path = getParentPath(path);
                 if (path == undefined) return undefined;
-                parent = findBubble(path);
+                parent = findBubbleByPath(path);
                 if (parent == undefined) return undefined;
                 ret = (ret * parent.width) / 200;
             }
@@ -359,10 +381,10 @@ export const useBubbleStore = createStore<Store>((set, get) => ({
      * 실제 View 위의 좌표를 bubble 내의 좌표로 변환
      */
     view2BubbleWithVector2D: (pos: Vector2D, cameraView: ViewCoord, bubblePath: string) => {
-        const { findBubble, descendant2child } = get();
+        const { findBubbleByPath, descendant2child } = get();
         let ret = { ...pos };
 
-        const bubble = findBubble(bubblePath);
+        const bubble = findBubbleByPath(bubblePath);
         if (bubble) {
             const bubbleView = descendant2child(bubble, cameraView.path);
             ret = global2bubbleWithVector2D(ret, bubbleView);
@@ -373,10 +395,10 @@ export const useBubbleStore = createStore<Store>((set, get) => ({
      * 실제 View 위의 좌표를 bubble 내의 좌표로 변환
      */
     view2BubbleWithRect: (rect: Rect, cameraView: ViewCoord, bubblePath: string) => {
-        const { findBubble, descendant2child } = get();
+        const { findBubbleByPath, descendant2child } = get();
         let ret = { ...rect };
 
-        const bubble = findBubble(bubblePath);
+        const bubble = findBubbleByPath(bubblePath);
         if (bubble) {
             const bubbleView = descendant2child(bubble, cameraView.path);
             ret = global2bubbleWithRect(ret, bubbleView);

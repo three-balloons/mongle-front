@@ -81,7 +81,7 @@ export const RendererProvider: React.FC<RendererProviderProps> = ({ children, is
     const { getSelectedPictures } = usePicture();
     const getFocusBubblePath = useBubbleStore((state) => state.getFocusBubblePath);
     const getBubbles = useBubbleStore((state) => state.getBubbles);
-    const findBubble = useBubbleStore((state) => state.findBubble);
+    const findBubbleByPath = useBubbleStore((state) => state.findBubbleByPath);
     const descendant2child = useBubbleStore((state) => state.descendant2child);
     const getRatioWithCamera = useBubbleStore((state) => state.getRatioWithCamera);
     const { addCurveDeletionLog } = useLog();
@@ -91,7 +91,6 @@ export const RendererProvider: React.FC<RendererProviderProps> = ({ children, is
         // Rerenders when canvas view changes
         useViewStore.subscribe((state) => {
             if (state.cameraView) {
-                console.log('reRender');
                 reRender();
             }
         });
@@ -198,7 +197,7 @@ export const RendererProvider: React.FC<RendererProviderProps> = ({ children, is
             context.clearRect(0, 0, canvas.width, canvas.height);
             applyPenConfig(context);
 
-            const parentBubble = findBubble(getNewCurvePath());
+            const parentBubble = findBubbleByPath(getNewCurvePath());
             let c = curve;
             if (parentBubble) {
                 const bubbleView = descendant2child(parentBubble, cameraView.path);
@@ -248,9 +247,7 @@ export const RendererProvider: React.FC<RendererProviderProps> = ({ children, is
             context.clearRect(0, 0, canvas.width, canvas.height);
             const bubbles = [...getBubbles()];
             for (const bubble of bubbles) {
-                if (!bubble.isBubblized) {
-                    bubbleRender(bubble);
-                }
+                bubbleRender(bubble);
             }
         }
     };
@@ -278,7 +275,6 @@ export const RendererProvider: React.FC<RendererProviderProps> = ({ children, is
      * bubble과 그 내부의 요소를 렌더링함
      */
     const bubbleRender = (bubble: Bubble) => {
-        if (!bubble.isVisible) return;
         const cameraView = getCameraView();
         const ratio = getRatioWithCamera(bubble, cameraView);
         if (ratio && ratio * cameraView.size.x < MINIMUN_RENDERED_BUBBLE_SIZE) {
@@ -404,7 +400,6 @@ export const RendererProvider: React.FC<RendererProviderProps> = ({ children, is
             //     context.shadowBlur = 0;
             bubble.shapes.forEach((shape) => {
                 if (shape.type === 'curve') {
-                    console.log(shape);
                     const curve = shape;
                     const c = bubble2globalWithCurve(curve.position, bubbleView);
 
@@ -436,8 +431,8 @@ export const RendererProvider: React.FC<RendererProviderProps> = ({ children, is
                         }
                         // TODO sweep 로직 다른 곳으로 옮기기
                         if (isSweep) {
-                            removeCurve(bubble.path, curve);
-                            addCurveDeletionLog(curve, bubble.path);
+                            removeCurve(bubble.id, curve);
+                            addCurveDeletionLog(curve, bubble.id);
                             // commitLog();
                         }
                     }
@@ -468,7 +463,6 @@ export const RendererProvider: React.FC<RendererProviderProps> = ({ children, is
         if (context) {
             context.clearRect(0, 0, canvas.width, canvas.height);
             getBubbles().forEach((bubble) => {
-                if (!bubble.isBubblized || !bubble.isVisible) return;
                 const ratio = getRatioWithCamera(bubble, cameraView);
                 if (ratio && ratio * cameraView.size.x < MINIMUN_RENDERED_BUBBLE_SIZE) {
                     return;

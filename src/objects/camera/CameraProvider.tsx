@@ -28,7 +28,7 @@ export const CameraProvider: React.FC<CameraProviderProps> = ({ children, height
     const isShowAnimationRef = useRef<boolean>(isShowAnimation);
     const modeRef = useRef<ControlMode>('none');
 
-    const findBubble = useBubbleStore((state) => state.findBubble);
+    const findBubbleByPath = useBubbleStore((state) => state.findBubbleByPath);
     const descendant2child = useBubbleStore((state) => state.descendant2child);
     const getChildBubbles = useBubbleStore((state) => state.getChildBubbles);
 
@@ -72,7 +72,7 @@ export const CameraProvider: React.FC<CameraProviderProps> = ({ children, height
 
     // 카메라를 root로 올리고 parentBubble로 다시 내림
     const zoomBubble = (bubblePath: string) => {
-        const bubble = findBubble(bubblePath);
+        const bubble = findBubbleByPath(bubblePath);
         if (bubble == undefined) return;
 
         const prevCamera: ViewCoord = { ...cameraViewRef.current };
@@ -82,7 +82,7 @@ export const CameraProvider: React.FC<CameraProviderProps> = ({ children, height
         // const parentBubble = descendant2child(parentBubble, '/');
         // let ret: Rect = { ...newCameraPos };
         while (cameraPath && cameraPath != '/') {
-            const cameraBubble = findBubble(cameraPath);
+            const cameraBubble = findBubbleByPath(cameraPath);
             if (cameraBubble == undefined) return undefined;
             newCameraPos.top = (cameraBubble.height * (100 + newCameraPos.top)) / 200 + cameraBubble.top;
             newCameraPos.left = (cameraBubble.width * (100 + newCameraPos.left)) / 200 + cameraBubble.left;
@@ -92,7 +92,7 @@ export const CameraProvider: React.FC<CameraProviderProps> = ({ children, height
         }
         const parentPath = getParentPath(bubblePath);
         if (parentPath != undefined) {
-            const parentBubble = findBubble(parentPath);
+            const parentBubble = findBubbleByPath(parentPath);
             if (parentBubble) {
                 const bubbleView = descendant2child(parentBubble, '/');
                 newCameraPos = global2bubbleWithRect(newCameraPos, bubbleView);
@@ -145,7 +145,7 @@ export const CameraProvider: React.FC<CameraProviderProps> = ({ children, height
             path != '/' &&
             (pos.top < -100 || pos.left < -100 || pos.top + pos.height > 100 || pos.left + pos.width > 100)
         ) {
-            pos = bubble2globalWithRect(pos, findBubble(path));
+            pos = bubble2globalWithRect(pos, findBubbleByPath(path));
             // TODO prevPos 설정 로직 분리
             // if (prevPos) prevPos = bubble2globalWithRect(prevPos, findBubble(path));
             path = getParentPath(path) ?? '/';
@@ -185,7 +185,7 @@ export const CameraProvider: React.FC<CameraProviderProps> = ({ children, height
             const prevPos = { ...prevCam.pos };
             let prevPath: string | undefined = prevCam.path;
             while (prevPath && prevPath !== '/' && prevPath !== lcaPath) {
-                const cameraBubble = findBubble(prevPath);
+                const cameraBubble = findBubbleByPath(prevPath);
                 if (cameraBubble == undefined) return undefined;
                 prevPos.top = (cameraBubble.height * (100 + prevPos.top)) / 200 + cameraBubble.top;
                 prevPos.left = (cameraBubble.width * (100 + prevPos.left)) / 200 + cameraBubble.left;
@@ -197,7 +197,7 @@ export const CameraProvider: React.FC<CameraProviderProps> = ({ children, height
             const currentPos = { ...pos };
             let currentPath: string | undefined = path;
             while (currentPath && currentPath !== '/' && currentPath !== lcaPath) {
-                const cameraBubble = findBubble(currentPath);
+                const cameraBubble = findBubbleByPath(currentPath);
                 if (cameraBubble == undefined) return undefined;
                 currentPos.top = (cameraBubble.height * (100 + currentPos.top)) / 200 + cameraBubble.top;
                 currentPos.left = (cameraBubble.width * (100 + currentPos.left)) / 200 + cameraBubble.left;

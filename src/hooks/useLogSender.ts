@@ -1,14 +1,15 @@
 import { useEffect, useRef } from 'react';
 // import { createBubbleAPI } from '@/api/bubble';
 import { useMutation } from '@tanstack/react-query';
-import { createBubbleAPI, deleteBubbleAPI, updateCurveAPI } from '@/api/bubble';
+import { createBubbleAPI, deleteBubbleAPI } from '@/api/bubbles/bubble';
 import { useLogStore } from '@/store/useLogStore';
 import { isLogBubble, isLogCurve } from '@/util/typeGuard';
+import { updateCurveAPI } from '@/api/curves/curve';
 
 interface CurveMutationProps {
     workspaceId: string;
-    bubblePath: string;
-    curves: Array<Curve>;
+    bubbleId: number;
+    curve: Curve;
 }
 
 interface BubbleMutationProps {
@@ -35,13 +36,27 @@ export const useLogSender = () => {
     }, []);
 
     /* Bubbles */
-    const { mutate: createBubbleMutation } = useMutation({
-        mutationFn: ({ workspaceId, bubble }: BubbleMutationProps) => createBubbleAPI({ workspaceId, bubble }),
+    const { mutateAsync: createBubbleMutation } = useMutation({
+        mutationFn: ({ workspaceId, bubble }: BubbleMutationProps) =>
+            createBubbleAPI({
+                workspaceId,
+                path: bubble.path,
+                name: bubble.name,
+                top: bubble.top,
+                left: bubble.left,
+                height: bubble.height,
+                width: bubble.width,
+            }),
     });
 
-    const { mutate: deleteBubbleMutation } = useMutation({
-        mutationFn: ({ workspaceId, bubble }: BubbleMutationProps) =>
-            deleteBubbleAPI({ workspaceId, path: bubble.path, isCascade: true }),
+    const { mutateAsync: deleteBubbleMutation } = useMutation({
+        mutationFn: ({ workspaceId, bubble }: BubbleMutationProps) => {
+            if (bubble.id) {
+                return deleteBubbleAPI({ workspaceId, bubbleId: bubble.id });
+            } else {
+                throw new Error('Bubble ID is required');
+            }
+        },
     });
 
     // const { mutate: updateBubbleMutation } = useMutation({
@@ -50,23 +65,21 @@ export const useLogSender = () => {
 
     /* Curves */
     const { mutate: createCurveMutation } = useMutation({
-        mutationFn: ({ workspaceId, bubblePath, curves }: CurveMutationProps) =>
-            updateCurveAPI({ workspaceId, bubblePath, createCurves: curves }),
+        mutationFn: ({ workspaceId, bubbleId, curve }: CurveMutationProps) =>
+            updateCurveAPI({ workspaceId, bubbleId, curve }),
     });
 
     const { mutate: updateCurveMutation } = useMutation({
-        mutationFn: ({ workspaceId, bubblePath, curves }: CurveMutationProps) =>
-            updateCurveAPI({ workspaceId, bubblePath, updateCurves: curves }),
+        mutationFn: ({ workspaceId, bubbleId, curve }: CurveMutationProps) =>
+            updateCurveAPI({ workspaceId, bubbleId, curve }),
     });
 
     const { mutate: deleteCurveMutation } = useMutation({
-        mutationFn: ({ workspaceId, bubblePath, curves }: CurveMutationProps) =>
+        mutationFn: ({ workspaceId, bubbleId, curve }: CurveMutationProps) =>
             updateCurveAPI({
                 workspaceId,
-                bubblePath,
-                deleteCurves: curves
-                    .filter((curve) => curve.id !== undefined)
-                    .map((curve) => ({ id: curve.id as number })),
+                bubbleId,
+                curve,
             }),
     });
 
@@ -86,18 +99,22 @@ export const useLogSender = () => {
         console.log('전송 완료!');
     };
 
-    const commitToServer = (log: LogElement) => {
+    const commitToServer = async (log: LogElement) => {
         const workspaceId = workspaceIdRef.current;
         if (!workspaceId || workspaceId == 'demo') return;
         switch (log.type) {
             case 'create':
                 if (isLogBubble(log)) {
-                    createBubbleMutation({ workspaceId: workspaceId, bubble: log.modified.object });
+                    // update bubble id
+                    log.modified.object = await createBubbleMutation({
+                        workspaceId: workspaceId,
+                        bubble: log.modified.object,
+                    });
                 } else if (isLogCurve(log)) {
                     createCurveMutation({
                         workspaceId: workspaceId,
-                        bubblePath: log.modified.path,
-                        curves: [log.modified.object],
+                        bubbleId: log.modified.bubbleId,
+                        curve: log.modified.object,
                     });
                 }
                 break;
@@ -107,8 +124,8 @@ export const useLogSender = () => {
                 } else if (isLogCurve(log)) {
                     deleteCurveMutation({
                         workspaceId: workspaceId,
-                        bubblePath: log.modified.path,
-                        curves: [log.modified.object],
+                        bubbleId: log.modified.bubbleId,
+                        curve: log.modified.object,
                     });
                 }
                 break;
@@ -121,8 +138,8 @@ export const useLogSender = () => {
                     // TODO updateMutation반영 후 id 저장 필요
                     updateCurveMutation({
                         workspaceId: workspaceId,
-                        bubblePath: log.modified.path,
-                        curves: [log.modified.object],
+                        bubbleId: log.modified.bubbleId,
+                        curve: log.modified.object,
                     });
                 }
                 break;

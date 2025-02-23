@@ -10,13 +10,13 @@ import { RendererProvider } from '@/objects/renderer/RendererProvider';
 import { LogProvider } from '@/objects/log/LogProvider';
 import { CameraProvider } from '@/objects/camera/CameraProvider';
 import { useQuery } from '@tanstack/react-query';
-import { getWorkspaceAPI } from '@/api/workspace';
+import { getWorkspaceAPI } from '@/api/workspaces/workspace';
 import { ReactComponent as BackIcon } from '@/assets/icon/arrow-left.svg';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import { Tutorial } from '@/components/tutorial/Tutorial';
 import { TutorialProvider } from '@/components/tutorial/TutorialProvider';
-import { getBubblesAPI } from '@/api/bubble';
+import { getAllBubblesAPI } from '@/api/bubbles/bubble';
 import { useBubbleStore } from '@/store/bubbleStore';
 import { useLogStore } from '@/store/useLogStore';
 import { useLogSender } from '@/hooks/useLogSender';
@@ -43,7 +43,7 @@ export const Workspace = ({ workspaceId }: WorkspaceProps) => {
         queryKey: ['bubbles', workspaceId],
         queryFn: () => {
             if (workspaceId === 'demo') return [] as Array<Bubble>;
-            else return getBubblesAPI(workspaceId, '/');
+            else return getAllBubblesAPI({ workspaceId });
         },
     });
 
@@ -77,7 +77,6 @@ export const Workspace = ({ workspaceId }: WorkspaceProps) => {
                 width: isShowExplorer ? window.innerWidth - 150 : window.innerWidth,
                 height: window.innerHeight - 100,
             });
-            console.log('canvasSize', canvasSize);
         };
 
         window.addEventListener('resize', handleResize);

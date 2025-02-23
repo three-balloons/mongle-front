@@ -27,7 +27,7 @@ export const useBubbleGun = () => {
 
     // const getBubbles = useBubbleStore((state) => state.getBubbles);
     // const getRatioWithCamera = useBubbleStore((state) => state.getRatioWithCamera);
-    const findBubble = useBubbleStore((state) => state.findBubble);
+    const findBubbleByPath = useBubbleStore((state) => state.findBubbleByPath);
     const setBubbleLabel = useBubbleStore((state) => state.setBubbleLabel);
     const getBubbleLabel = useBubbleStore((state) => state.getBubbleLabel);
     const descendant2child = useBubbleStore((state) => state.descendant2child);
@@ -35,6 +35,7 @@ export const useBubbleGun = () => {
     const view2BubbleWithRect = useBubbleStore((state) => state.view2BubbleWithRect);
     const getChildBubbles = useBubbleStore((state) => state.getChildBubbles);
     const getDescendantBubbles = useBubbleStore((state) => state.getDescendantBubbles);
+    const getAndDecreaseNextBubbleId = useBubbleStore((state) => state.getAndDecreaseNextBubbleId);
     const { /*bubbleTransitAnimation, */ reRender } = useRenderer();
     // const { workspaceId } = useParams<{ workspaceId: string }>();
 
@@ -113,18 +114,17 @@ export const useBubbleGun = () => {
 
         const bubble: Bubble = {
             ...bubbleRect,
+            id: getAndDecreaseNextBubbleId(),
             path:
                 createdBubblePathRef.current == '/'
                     ? '/' + bubbleName
                     : createdBubblePathRef.current + '/' + bubbleName,
             name: bubbleName,
             shapes: [],
-            isBubblized: false,
-            isVisible: true,
             nameSizeInCanvas: 0,
         };
 
-        const parentBubble = findBubble(createdBubblePathRef.current);
+        const parentBubble = findBubbleByPath(createdBubblePathRef.current);
         if (parentBubble) {
             const bubbleView = descendant2child(parentBubble, cameraView.path);
             const rect = global2bubbleWithRect(bubbleRect, bubbleView);
@@ -133,7 +133,7 @@ export const useBubbleGun = () => {
             bubble.top = rect.top;
             bubble.left = rect.left;
         }
-        const childrenPaths = getChildBubbles(createdBubblePathRef.current)
+        const childrenIds = getChildBubbles(createdBubblePathRef.current)
             .filter((child) => {
                 // isInside 유틸함수 만들기
                 if (
@@ -145,10 +145,10 @@ export const useBubbleGun = () => {
                     return true;
             })
             .map((child) => {
-                return child.path;
+                return child.id;
             });
 
-        addBubbleCreationLog(bubble, childrenPaths);
+        addBubbleCreationLog(bubble, childrenIds);
         commitLog();
 
         // if (workspaceId) {
@@ -157,7 +157,7 @@ export const useBubbleGun = () => {
         //         // TODO: 자식 path 변경 사항 api로 전달
         //     }
         // }
-        addBubble(bubble, childrenPaths);
+        addBubble(bubble, childrenIds);
         setFocusBubblePath(bubble.path);
 
         setBubbleLabel(getBubbleLabel() + 1);

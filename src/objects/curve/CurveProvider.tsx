@@ -9,12 +9,12 @@ export type CurveContextProps = {
     setNewCurve: (curve: Curve2D) => void;
     addControlPoint: (pos: Point, force?: boolean) => boolean;
     addNewCurve: (thicknessRatio?: number) => Curve;
-    addCurve: (path: string, curve: Curve) => void;
-    updateCurve: (path: string, curveToUpdate: Curve) => void;
+    addCurve: (bubbleId: number, curve: Curve) => void;
+    updateCurve: (bubbleId: number, curveToUpdate: Curve) => void;
     setSelectedCurve: (curves: Array<Curve>) => void;
     getSelectedCurve: () => Array<Curve>;
-    removeCurve: (path: string, curveToRemove: Curve) => void;
-    removeCurvesWithPath: (path: string) => void;
+    removeCurve: (bubbleId: number, curveToRemove: Curve) => void;
+    removeCurvesWithId: (bubbleId: number) => void;
     applyPenConfig: (context: CanvasRenderingContext2D, options?: PenConfig) => void;
     setThicknessWithRatio: (context: CanvasRenderingContext2D, thicknessRatio: number) => void;
 };
@@ -33,6 +33,7 @@ export const CurveProvider: React.FC<CurveProviderProps> = ({ children, sensitiv
     const selectedCurveRef = useRef<Array<Curve>>([]);
     const coolTime = useRef(sensitivity);
     const penConfig = useConfigStore((state) => state.penConfig);
+    const findBubbleByPath = useBubbleStore((state) => state.findBubbleByPath);
     const findBubble = useBubbleStore((state) => state.findBubble);
 
     // const bufferedUpdateCurveRef = useRef<Map<number, { curve: Curve; path: string }>>(new Map());
@@ -73,7 +74,7 @@ export const CurveProvider: React.FC<CurveProviderProps> = ({ children, sensitiv
             config: { ...penConfigRef.current, thickness: penConfigRef.current.thickness / thicknessRatio },
             id: nextBufferedCurveIdRef.current,
         };
-        const bubble = findBubble(newCurvePathRef.current);
+        const bubble = findBubbleByPath(newCurvePathRef.current);
         // bufferedCreateCurveRef.current.set(newCurve.id, { curve: newCurve, path: newCurvePathRef.current });
         nextBufferedCurveIdRef.current = nextBufferedCurveIdRef.current - 1;
         if (bubble) bubble.shapes = [...bubble.shapes, newCurve];
@@ -82,14 +83,8 @@ export const CurveProvider: React.FC<CurveProviderProps> = ({ children, sensitiv
         return newCurve;
     };
 
-    const updateCurve = (path: string, curveToUpdate: Curve) => {
-        // if (!bufferedDeleteCurveRef.current.has(curveToUpdate.id)) {
-        //     if (bufferedCreateCurveRef.current.has(curveToUpdate.id)) {
-        //         bufferedCreateCurveRef.current.set(curveToUpdate.id, { curve: curveToUpdate, path: path });
-        //     } else bufferedUpdateCurveRef.current.set(curveToUpdate.id, { curve: curveToUpdate, path: path });
-        // }
-
-        const bubble = findBubble(path);
+    const updateCurve = (bubbleId: number, curveToUpdate: Curve) => {
+        const bubble = findBubble(bubbleId);
         if (bubble) {
             bubble.shapes = bubble.shapes.map((shape) => {
                 if (shape.type === 'curve' && shape.id == curveToUpdate.id) return { ...curveToUpdate };
@@ -98,18 +93,8 @@ export const CurveProvider: React.FC<CurveProviderProps> = ({ children, sensitiv
         }
     };
 
-    const removeCurve = (path: string, curveToRemove: Curve) => {
-        const bubble = findBubble(path);
-
-        // if (bufferedUpdateCurveRef.current.has(curveToRemove.id)) {
-        //     bufferedUpdateCurveRef.current.delete(curveToRemove.id);
-        //     bufferedDeleteCurveRef.current.set(curveToRemove.id, { curve: curveToRemove, path: path });
-        // } else if (bufferedCreateCurveRef.current.has(curveToRemove.id)) {
-        //     bufferedCreateCurveRef.current.delete(curveToRemove.id);
-        // } else if (!bufferedDeleteCurveRef.current.has(curveToRemove.id)) {
-        //     bufferedDeleteCurveRef.current.set(curveToRemove.id, { curve: curveToRemove, path: path });
-        // }
-
+    const removeCurve = (bubbleId: number, curveToRemove: Curve) => {
+        const bubble = findBubble(bubbleId);
         if (bubble) {
             bubble.shapes = [...bubble.shapes.filter((curve) => curve != curveToRemove)];
         }
@@ -123,13 +108,13 @@ export const CurveProvider: React.FC<CurveProviderProps> = ({ children, sensitiv
         return selectedCurveRef.current;
     };
 
-    const addCurve = (path: string, curve: Curve) => {
-        const bubble = findBubble(path);
+    const addCurve = (bubbleId: number, curve: Curve) => {
+        const bubble = findBubble(bubbleId);
         if (bubble) bubble.shapes = [...bubble.shapes, curve];
     };
 
-    const removeCurvesWithPath = (path: string) => {
-        const bubble = findBubble(path);
+    const removeCurvesWithId = (bubbleId: number) => {
+        const bubble = findBubble(bubbleId);
         if (bubble) bubble.shapes = [];
     };
 
@@ -168,7 +153,7 @@ export const CurveProvider: React.FC<CurveProviderProps> = ({ children, sensitiv
                 addCurve,
                 updateCurve,
                 removeCurve,
-                removeCurvesWithPath,
+                removeCurvesWithId,
                 applyPenConfig,
                 setThicknessWithRatio,
             }}

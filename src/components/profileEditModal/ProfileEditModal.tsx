@@ -5,7 +5,7 @@ import { cn } from '@/util/cn';
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { queryClient } from '@/react-query/quertClient';
-import { updateUserAPI } from '@/api/user';
+import { updateUserAPI } from '@/api/users/user';
 
 type ProfileEditModalProps = {
     user: {

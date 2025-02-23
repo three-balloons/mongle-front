@@ -10,17 +10,22 @@ export type LogContextProps = {
     undo: () => void;
     redo: () => void;
     commitLog: () => void;
-    addBubbleCreationLog: (bubble: Bubble, childrenPaths?: string[]) => void;
-    addBubbleDeletionLog: (bubble: Bubble, childrenPaths?: string[]) => void;
+    addBubbleCreationLog: (bubble: Bubble, childrenIds?: number[]) => void;
+    addBubbleDeletionLog: (bubble: Bubble, childrenIds?: number[]) => void;
     addBubbleUpdateLog: (
         originBubble: Bubble,
         modifiedBubble: Bubble,
         originChildrenPaths?: string[],
         modifiedBubblePath?: string[],
     ) => void;
-    addCurveCreationLog: (curve: Curve, path: string) => void;
-    addCurveDeletionLog: (curve: Curve, path: string) => void;
-    addCurveUpdateLog: (originCurve: Curve, modifiedCurve: Curve, originPath: string, modifiedPath: string) => void;
+    addCurveCreationLog: (curve: Curve, bubbleId: number) => void;
+    addCurveDeletionLog: (curve: Curve, bubbleId: number) => void;
+    addCurveUpdateLog: (
+        originCurve: Curve,
+        modifiedCurve: Curve,
+        originBubbleId: number,
+        modifiedBubbleId: number,
+    ) => void;
     addCameraUpdateLog: (originCameraView: ViewCoord, modifiedCameraView: ViewCoord) => void;
 };
 
@@ -96,21 +101,21 @@ export const LogProvider: React.FC<LogProviderProps> = ({ children }) => {
                     if (isLogBubble(log)) {
                         removeBubble(log.modified.object);
                     } else if (isLogCurve(log)) {
-                        removeCurve(log.modified.path, log.modified.object);
+                        removeCurve(log.modified.bubbleId, log.modified.object);
                     }
                     break;
                 case 'delete':
-                    if (isLogBubble(log)) addBubble(log.modified.object, log.modified.childrenPaths);
-                    else if (isLogCurve(log)) addCurve(log.modified.path, log.modified.object);
+                    if (isLogBubble(log)) addBubble(log.modified.object, log.modified.childrenIds);
+                    else if (isLogCurve(log)) addCurve(log.modified.bubbleId, log.modified.object);
                     break;
                 case 'update': // path 변경 없는 경우, 크기 등만 변함
                     if (isLogBubble(log)) {
                         // 제거 후 생성하는 방식
                         removeBubble(log.modified.object);
-                        addBubble(log.origin.object, log.origin.childrenPaths);
+                        addBubble(log.origin.object, log.origin.childrenIds);
                     } else if (isLogCurve(log)) {
-                        removeCurve(log.modified.path, log.modified.object);
-                        addCurve(log.origin.path, log.origin.object);
+                        removeCurve(log.modified.bubbleId, log.modified.object);
+                        addCurve(log.origin.bubbleId, log.origin.object);
                     } else if (isLogCamera(log)) {
                         updateCameraView(log.origin.object, log.modified.object);
                     }
@@ -134,23 +139,23 @@ export const LogProvider: React.FC<LogProviderProps> = ({ children }) => {
             switch (log.type) {
                 case 'create':
                     if (isLogBubble(log)) {
-                        addBubble(log.modified.object, log.modified.childrenPaths);
+                        addBubble(log.modified.object, log.modified.childrenIds);
                     } else if (isLogCurve(log)) {
-                        addCurve(log.modified.path, log.modified.object);
+                        addCurve(log.modified.bubbleId, log.modified.object);
                     }
                     break;
                 case 'delete':
                     if (isLogBubble(log)) removeBubble(log.modified.object);
-                    else if (isLogCurve(log)) removeCurve(log.modified.path, log.modified.object);
+                    else if (isLogCurve(log)) removeCurve(log.modified.bubbleId, log.modified.object);
                     break;
                 case 'update':
                     if (isLogBubble(log)) {
                         // 제거 후 생성하는 방식
                         removeBubble(log.origin.object);
-                        addBubble(log.modified.object, log.modified.childrenPaths ?? []);
+                        addBubble(log.modified.object, log.modified.childrenIds ?? []);
                     } else if (isLogCurve(log)) {
-                        removeCurve(log.origin.path, log.origin.object);
-                        addCurve(log.modified.path, log.modified.object);
+                        removeCurve(log.origin.bubbleId, log.origin.object);
+                        addCurve(log.modified.bubbleId, log.modified.object);
                     } else if (isLogCamera(log)) {
                         updateCameraView(log.modified.object, log.origin.object);
                     }
@@ -167,17 +172,17 @@ export const LogProvider: React.FC<LogProviderProps> = ({ children }) => {
         uncommitedLogsRef.current = [];
     };
 
-    const addBubbleCreationLog = (bubble: Bubble, childrenPaths?: string[]) => {
+    const addBubbleCreationLog = (bubble: Bubble, childrenIds?: number[]) => {
         uncommitedLogsRef.current = [
             ...uncommitedLogsRef.current,
-            { type: 'create', modified: { object: bubble, childrenPaths: childrenPaths ?? [] } },
+            { type: 'create', modified: { object: bubble, childrenIds: childrenIds ?? [] } },
         ];
     };
 
-    const addBubbleDeletionLog = (bubble: Bubble, childrenPaths?: string[]) => {
+    const addBubbleDeletionLog = (bubble: Bubble, childrenIds?: number[]) => {
         uncommitedLogsRef.current = [
             ...uncommitedLogsRef.current,
-            { type: 'delete', modified: { object: bubble, childrenPaths: childrenPaths ?? [] } },
+            { type: 'delete', modified: { object: bubble, childrenIds: childrenIds ?? [] } },
         ];
     };
 
@@ -197,27 +202,34 @@ export const LogProvider: React.FC<LogProviderProps> = ({ children }) => {
         ];
     };
 
-    const addCurveCreationLog = (curve: Curve, path: string) => {
+    // curve creation must be executed after bubble creation
+    const addCurveCreationLog = (curve: Curve, bubbleId: number) => {
         uncommitedLogsRef.current = [
             ...uncommitedLogsRef.current,
-            { type: 'create', modified: { object: curve, path: path } },
+            { type: 'create', modified: { object: curve, bubbleId: bubbleId } },
         ];
     };
 
-    const addCurveDeletionLog = (curve: Curve, path: string) => {
+    // curve deletion must be executed after bubble creation
+    const addCurveDeletionLog = (curve: Curve, bubbleId: number) => {
         uncommitedLogsRef.current = [
             ...uncommitedLogsRef.current,
-            { type: 'delete', modified: { object: curve, path: path } },
+            { type: 'delete', modified: { object: curve, bubbleId: bubbleId } },
         ];
     };
 
-    const addCurveUpdateLog = (originCurve: Curve, modifiedCurve: Curve, originPath: string, modifiedPath: string) => {
+    const addCurveUpdateLog = (
+        originCurve: Curve,
+        modifiedCurve: Curve,
+        originBubbleId: number,
+        modifiedBubbleId: number,
+    ) => {
         uncommitedLogsRef.current = [
             ...uncommitedLogsRef.current,
             {
                 type: 'update',
-                modified: { object: modifiedCurve, path: modifiedPath },
-                origin: { object: originCurve, path: originPath },
+                modified: { object: modifiedCurve, bubbleId: modifiedBubbleId },
+                origin: { object: originCurve, bubbleId: originBubbleId },
             },
         ];
     };

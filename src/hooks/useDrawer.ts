@@ -16,8 +16,10 @@ export const useDrawer = () => {
     const view2BubbleWithVector2D = useBubbleStore((state) => state.view2BubbleWithVector2D);
     const setFocusBubblePath = useBubbleStore((state) => state.setFocusBubblePath);
     const addBubble = useBubbleStore((state) => state.addBubble);
+    const findBubbleByPath = useBubbleStore((state) => state.findBubbleByPath);
     const getBubbleLabel = useBubbleStore((state) => state.getBubbleLabel);
     const setBubbleLabel = useBubbleStore((state) => state.setBubbleLabel);
+    const getAndDecreaseNextBubbleId = useBubbleStore((state) => state.getAndDecreaseNextBubbleId);
 
     const { reRender } = useRenderer();
 
@@ -90,6 +92,7 @@ export const useDrawer = () => {
                     getNewCurvePath() === '/' ? pos : view2BubbleWithVector2D(pos, cameraView, getNewCurvePath());
                 addControlPoint({ ...position, isVisible: true }, true);
             }
+            const bubbleId = findBubbleByPath(getNewCurvePath())?.id ?? getAndDecreaseNextBubbleId();
             // 버블 밖에 그릴 경우
             if (getNewCurvePath() === '/') {
                 // 버블 밖에 커브를 그린 경우
@@ -98,6 +101,7 @@ export const useDrawer = () => {
                 // TODO: useBubble로 id옮기고 bubble => mongle로 변경
                 const bubbleName = 'mongle ' + getBubbleLabel().toString();
                 const bubble: Bubble = {
+                    id: bubbleId,
                     top: rect.top,
                     left: rect.left,
                     height: rect.height,
@@ -105,8 +109,6 @@ export const useDrawer = () => {
                     path: '/' + bubbleName,
                     name: bubbleName,
                     shapes: [],
-                    isBubblized: false,
-                    isVisible: true,
                     nameSizeInCanvas: 0,
                 };
                 setBubbleLabel(getBubbleLabel() + 1);
@@ -122,7 +124,7 @@ export const useDrawer = () => {
                 ]);
             }
             const newCurve: Curve = addNewCurve(getThicknessRatio(cameraView));
-            addCurveCreationLog(newCurve, getNewCurvePath());
+            addCurveCreationLog(newCurve, bubbleId);
             commitLog();
         },
 

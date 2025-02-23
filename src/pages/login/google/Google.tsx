@@ -1,4 +1,4 @@
-import { getAccessTokenAPI } from '@/api/auth';
+import { getAccessTokenAPI } from '@/api/auth/auth';
 
 import { stringify, parse } from 'qs';
 import { useEffect } from 'react';
@@ -26,7 +26,7 @@ const googleLogin = async (code: string) => {
     const { accessToken } = await getAccessTokenAPI({
         provider: 'GOOGLE',
         code: code,
-        redirect_uri: `${window.location.origin}/login/google`,
+        redirectUri: `${window.location.origin}/login/google`,
     });
     return {
         accessToken,

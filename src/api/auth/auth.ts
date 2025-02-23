@@ -1,27 +1,17 @@
 import { mongleApi } from '@/api/mongleApi';
 import { APIException } from '@/api/exceptions';
+import { GetAccessTokenReq, GetAccessTokenRes, TestLoginRes } from '@/api/auth/type';
 
-type GetAccessTokenReq = {
-    provider: Provider;
-    password?: string;
-    email?: string;
-    code?: string;
-    redirect_uri?: string;
-};
-type GetAccessTokenRes = {
-    accessToken: string;
-};
-
-export const getAccessTokenAPI = async ({ provider, code, redirect_uri }: GetAccessTokenReq) => {
+export const getAccessTokenAPI = async ({ provider, code, redirectUri }: GetAccessTokenReq) => {
     try {
         const res = await mongleApi.post<
             GetAccessTokenReq,
             GetAccessTokenRes,
             'INAPPROPRIATE_PAYLOAD' | 'SIGN_UP_NEEDED' | 'NOT_MATCH_PASSWORD'
-        >(`/auth/access`, {
+        >('/auth/access', {
             provider: provider,
             code: code,
-            redirect_uri: redirect_uri,
+            redirectUri: redirectUri,
         });
         return res;
     } catch (error: unknown) {
@@ -38,26 +28,12 @@ export const getAccessTokenAPI = async ({ provider, code, redirect_uri }: GetAcc
     }
 };
 
-type TestLoginReq = {
-    provider: Provider;
-    oauth_id: string;
-    name: string;
-};
-type TestLoginRes = {
-    accessToken: string;
-};
-
-export const testLoginAPI = async ({ provider, oauth_id, name }: TestLoginReq) => {
+export const testLoginAPI = async () => {
     try {
-        const res = await mongleApi.post<
-            TestLoginReq,
+        const res = await mongleApi.get<
             TestLoginRes,
             'INAPPROPRIATE_PAYLOAD' | 'SIGN_UP_NEEDED' | 'NOT_MATCH_PASSWORD'
-        >(`/auth/test`, {
-            provider: provider,
-            oauth_id: oauth_id,
-            name: name,
-        });
+        >('/auth/test');
         return res;
     } catch (error: unknown) {
         if (error instanceof APIException) {

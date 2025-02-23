@@ -1,6 +1,3 @@
-// import { isCollisionPointWithRect } from '@/util/shapes/collision';
-// import { findBubble } from '@/util/bubble/bubble';
-
 // idea: forward kinematics
 /** 좌표 변환 과정(obj의 로컬 좌표 -> view 좌표(canvas에 보이는 좌표))
  * 1. bubble

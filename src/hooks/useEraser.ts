@@ -8,7 +8,7 @@ import { useLog } from '@/objects/log/useLog';
 import { useBubbleStore } from '@/store/bubbleStore';
 
 type CurveAndEraser = {
-    path: string;
+    id: number;
     curve: Curve;
     eraser: Circle;
 };
@@ -25,7 +25,7 @@ export const useEraser = () => {
     const earseModeRef = useRef<EraseMode>(eraseConfig.mode);
     const earseRadiusRef = useRef<number>(eraseConfig.radius);
     const earseAreaCurves = useRef<Array<{ origin: Curve; earsed: Curve; isModified: boolean }>>([]);
-    const { removeCurve, removeCurvesWithPath, updateCurve } = useCurve();
+    const { removeCurve, removeCurvesWithId, updateCurve } = useCurve();
 
     const view2BubbleWithVector2D = useBubbleStore((state) => state.view2BubbleWithVector2D);
     const removeBubble = useBubbleStore((state) => state.removeBubble);
@@ -88,7 +88,7 @@ export const useEraser = () => {
                         const pos = view2BubbleWithVector2D(position, cameraView, descendant.path);
                         const scale = (getRatioWithCamera(descendant, cameraView) ?? 1) * 4;
                         return {
-                            path: descendant.path,
+                            id: descendant.id,
                             curve: curve,
                             eraser: {
                                 center: {
@@ -103,13 +103,13 @@ export const useEraser = () => {
         });
 
         // 지워주면 됨 => log가 생기면 log씌움
-        curveWithErasers.forEach(({ path, curve, eraser }) => {
+        curveWithErasers.forEach(({ id, curve, eraser }) => {
             const temp = markCurveWithEraser(eraser, curve);
-            updateCurve(path, temp);
+            updateCurve(id, temp);
             // removeCurve(path, curve);
             // addCurve(path, temp);
             // TODO update curve
-            addCurveUpdateLog(curve, temp, path, path);
+            addCurveUpdateLog(curve, temp, id, id);
         });
     };
 
@@ -128,7 +128,7 @@ export const useEraser = () => {
                         const pos = view2BubbleWithVector2D(position, cameraView, descendant.path);
                         const scale = (getRatioWithCamera(descendant, cameraView) ?? 1) * 2;
                         return {
-                            path: descendant.path,
+                            id: descendant.id,
                             curve: curve,
                             eraser: {
                                 center: {
@@ -142,10 +142,10 @@ export const useEraser = () => {
             );
         });
 
-        curveWithErasers.forEach(({ path, curve, eraser }) => {
+        curveWithErasers.forEach(({ id, curve, eraser }) => {
             if (isIntersectCurveWithEraser(eraser, curve)) {
-                removeCurve(path, curve);
-                addCurveDeletionLog(curve, path);
+                removeCurve(id, curve);
+                addCurveDeletionLog(curve, id);
             }
         });
     };
@@ -155,11 +155,11 @@ export const useEraser = () => {
         // setEraseMode('area');
         const ereaseChildBubble = (bubble: Bubble) => {
             const children = getChildBubbles(bubble.path);
-            addBubbleDeletionLog(bubble, [...children.map((child) => child.path)]);
+            addBubbleDeletionLog(bubble, [...children.map((child) => child.id)]);
             children.forEach((child) => {
                 ereaseChildBubble(child);
             });
-            removeCurvesWithPath(bubble.path);
+            removeCurvesWithId(bubble.id);
             removeBubble(bubble);
         };
         ereaseChildBubble(bubble);
