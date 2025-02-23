@@ -5,7 +5,12 @@ import { usePicture } from '@/objects/picture/usePicture';
 import { useBubbleStore } from '@/store/bubbleStore';
 import { useConfigStore } from '@/store/configStore';
 import { useViewStore } from '@/store/viewStore';
-import { MINIMUN_RENDERED_BUBBLE_SIZE, OFF_SCREEN_HEIGHT, OFF_SCREEN_WIDTH } from '@/util/constant';
+import {
+    MINIMUN_RENDERED_BUBBLE_SIZE,
+    OFF_SCREEN_HEIGHT,
+    OFF_SCREEN_WIDTH,
+    WORKSPACE_INNER_HALF_SIZE,
+} from '@/util/constant';
 import {
     bubble2globalWithCurve,
     bubble2globalWithRect,
@@ -154,7 +159,7 @@ export const RendererProvider: React.FC<RendererProviderProps> = ({ children, is
         renderer();
 
         editingRectRef.current && draggingRectRender(editingRectRef.current);
-        movementBubbleRender();
+        // movementBubbleRender();
     };
 
     const clearLayerRenderer = (canvas: HTMLCanvasElement) => {
@@ -307,8 +312,8 @@ export const RendererProvider: React.FC<RendererProviderProps> = ({ children, is
             if (isShowBubbleRef.current || getFocusBubblePath() === bubble.path) {
                 const x = Math.min(rect.width + rect.left, rect.left);
                 const y = Math.min(rect.height + rect.top, rect.top);
-                const cornerRadius = Math.floor(Math.min(rect.width, rect.height) / 10);
-                context.strokeStyle = getThemeSecondColor(theme);
+                const cornerRadius = Math.floor(Math.min(rect.width, rect.height) / (WORKSPACE_INNER_HALF_SIZE / 10));
+                // context.strokeStyle = getThemeSecondColor(theme);
 
                 context.beginPath();
                 context.moveTo(x + cornerRadius, y);
@@ -327,9 +332,7 @@ export const RendererProvider: React.FC<RendererProviderProps> = ({ children, is
                 context.quadraticCurveTo(x, y, x + cornerRadius, y);
                 context.closePath();
                 context.lineWidth = 3;
-                context.setLineDash([10, 10]);
                 context.stroke();
-                context.setLineDash([]);
                 // bubble name
                 context.font = '12px monggeulR';
 
@@ -341,63 +344,6 @@ export const RendererProvider: React.FC<RendererProviderProps> = ({ children, is
                 const metricName = context.measureText('⊗ ' + bubble.name);
                 bubble.nameSizeInCanvas = metricName.width;
             }
-            context.shadowColor = getThemeMainColor(theme);
-            context.shadowOffsetX = 0;
-            context.shadowOffsetY = 0;
-            // TODO curve, picture 통합 확정되면 코드 제거거
-            //     bubble.curves.forEach((curve) => {
-            //         const c = bubble2globalWithCurve(curve.position, bubbleView);
-
-            //         const beziers = catmullRom2Bezier(curve2View(c, cameraView));
-            //         applyPenConfig(context, curve.config);
-            //         setThicknessWithRatio(context, getThicknessRatio(cameraView));
-            //         if (getSelectedCurve().find((cuv) => cuv === curve)) {
-            //             context.shadowBlur = 5;
-            //         } else {
-            //             context.shadowBlur = 0;
-            //         }
-            //         context.beginPath();
-            //         // TODO: 실제 커브를 그리는 부분과 그릴지 말지 결정하는 부분 분리 할 것
-            //         if (beziers.length > 0) {
-            //             let isSweep = true;
-            //             for (let i = 0; i < beziers.length; i++) {
-            //                 context.moveTo(beziers[i].start.x, beziers[i].start.y);
-            //                 if (beziers[i].start.isVisible) {
-            //                     context.bezierCurveTo(
-            //                         beziers[i].cp1.x,
-            //                         beziers[i].cp1.y,
-            //                         beziers[i].cp2.x,
-            //                         beziers[i].cp2.y,
-            //                         beziers[i].end.x,
-            //                         beziers[i].end.y,
-            //                     );
-            //                     isSweep = false;
-            //                 }
-            //             }
-            //             // TODO sweep 로직 다른 곳으로 옮기기
-            //             if (isSweep) {
-            //                 removeCurve(bubble.path, curve);
-            //                 addCurveDeletionLog(curve, bubble.path);
-            //                 // commitLog();
-            //             }
-            //         }
-            //         context.stroke();
-            //     });
-            //     context.shadowBlur = 0;
-            //     if (bubble.pictures) {
-            //         bubble.pictures.forEach((picture) => {
-            //             if (getSelectedPictures().find((pic) => pic == picture)) context.shadowBlur = 5;
-            //             else context.shadowBlur = 0;
-            //             const position = rect2View(bubble2globalWithRect(picture as Rect, bubbleView), cameraView);
-            //             const ctx = picture.offScreen?.getContext('2d');
-            //             ctx?.drawImage(picture.image, 0, 0, OFF_SCREEN_WIDTH, OFF_SCREEN_HEIGHT);
-            //             const imageBitmap = picture.offScreen?.transferToImageBitmap(); // for android webview
-            //             if (imageBitmap)
-            //                 context.drawImage(imageBitmap, position.left, position.top, position.width, position.height);
-            //         });
-            //     }
-
-            //     context.shadowBlur = 0;
             bubble.shapes.forEach((shape) => {
                 if (shape.type === 'curve') {
                     const curve = shape;

@@ -59,7 +59,7 @@ export const CameraProvider: React.FC<CameraProviderProps> = ({ children, height
             },
             size: { x: width, y: height },
         });
-    }, [width, height]);
+    }, [width, height, setCameraView]);
     useEffect(() => {
         setCameraView(cameraViewRef.current);
         // Rerenders when canvas view changes
@@ -69,7 +69,7 @@ export const CameraProvider: React.FC<CameraProviderProps> = ({ children, height
         useConfigStore.subscribe(({ isShowAnimation }) => {
             isShowAnimationRef.current = isShowAnimation;
         });
-    }, []);
+    }, [setCameraView]);
 
     // 카메라를 root로 올리고 parentBubble로 다시 내림
     const zoomBubble = (bubblePath: string) => {
