@@ -1,5 +1,11 @@
 import { createStore } from '@/store/store';
-import { BUBBLE_BORDER_WIDTH, RENDERED_FONT_SIZE, UNNAMED } from '@/util/constant';
+import {
+    BUBBLE_BORDER_WIDTH,
+    RENDERED_FONT_SIZE,
+    UNNAMED,
+    WORKSPACE_INNER_HALF_SIZE,
+    WORKSPACE_INNER_SIZE,
+} from '@/util/constant';
 import {
     bubble2globalWithRect,
     global2bubbleWithRect,
@@ -340,10 +346,10 @@ export const useBubbleStore = createStore<Store>((set, get) => ({
                 parent = findBubbleByPath(path);
                 if (parent == undefined) return undefined;
                 ret.path = parent.path;
-                ret.top = (parent.height * (100 + ret.top)) / 200 + parent.top;
-                ret.left = (parent.width * (100 + ret.left)) / 200 + parent.left;
-                ret.height = (parent.height * ret.height) / 200;
-                ret.width = (parent.width * ret.width) / 200;
+                ret.top = (parent.height * (WORKSPACE_INNER_HALF_SIZE + ret.top)) / WORKSPACE_INNER_SIZE + parent.top;
+                ret.left = (parent.width * (WORKSPACE_INNER_HALF_SIZE + ret.left)) / WORKSPACE_INNER_SIZE + parent.left;
+                ret.height = (parent.height * ret.height) / WORKSPACE_INNER_SIZE;
+                ret.width = (parent.width * ret.width) / WORKSPACE_INNER_SIZE;
             }
             return ret;
         }
@@ -355,27 +361,14 @@ export const useBubbleStore = createStore<Store>((set, get) => ({
      * renaming? : getRatioWithCameraForRendering
      */
     getRatioWithCamera: (bubble: Bubble, cameraView: ViewCoord) => {
-        const { findBubbleByPath } = get();
+        const { descendant2child } = get();
         const depth = getPathDifferentDepth(cameraView.path, bubble.path);
         if (depth == undefined) return undefined;
         // TODO 0 이하의 경우 고려 안함
-        if (depth == 0) return 200 / cameraView.pos.width;
-        if (depth == 1) return bubble.width / cameraView.pos.width;
-        else if (depth > 1) {
-            let path: string | undefined = bubble.path;
-            let ret = bubble.width;
-
-            let parent: Bubble | undefined;
-            for (let i = 1; i < depth; i++) {
-                path = getParentPath(path);
-                if (path == undefined) return undefined;
-                parent = findBubbleByPath(path);
-                if (parent == undefined) return undefined;
-                ret = (ret * parent.width) / 200;
-            }
-            ret = ret / cameraView.pos.width;
-            return ret;
-        }
+        const bubbleRect = descendant2child(bubble, cameraView.path);
+        if (!bubbleRect)
+            return Math.max(WORKSPACE_INNER_SIZE / cameraView.pos.width, WORKSPACE_INNER_SIZE / cameraView.pos.height);
+        return Math.max(bubbleRect.width / cameraView.pos.width, bubbleRect.height / cameraView.pos.height);
     },
     /**
      * 실제 View 위의 좌표를 bubble 내의 좌표로 변환
