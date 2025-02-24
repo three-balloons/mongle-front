@@ -1,8 +1,8 @@
 import { createContext, useRef } from 'react';
 
 export type PictureContextProps = {
-    setCreatingPicture: (image: HTMLImageElement, offScreen: OffscreenCanvas) => void;
-    getCreatingPicture: () => { image: HTMLImageElement; offScreen: OffscreenCanvas } | undefined;
+    setCreatingPicture: (image: HTMLImageElement, offScreen: OffscreenCanvas, fid: string) => void;
+    getCreatingPicture: () => { image: HTMLImageElement; offScreen: OffscreenCanvas; fid: string } | undefined;
     setSelectedPictures: (pictures: Picture[]) => void;
     getSelectedPictures: () => Picture[];
 };
@@ -14,10 +14,12 @@ type PictureProviderProps = {
 };
 
 export const PictureProvider: React.FC<PictureProviderProps> = ({ children }) => {
-    const creatingPictureRef = useRef<{ image: HTMLImageElement; offScreen: OffscreenCanvas } | undefined>(undefined);
+    const creatingPictureRef = useRef<{ image: HTMLImageElement; offScreen: OffscreenCanvas; fid: string } | undefined>(
+        undefined,
+    );
     const selectedPicturesRef = useRef<Picture[]>([]);
-    const setCreatingPicture = (image: HTMLImageElement, offScreen: OffscreenCanvas) => {
-        creatingPictureRef.current = { image: image, offScreen: offScreen };
+    const setCreatingPicture = (image: HTMLImageElement, offScreen: OffscreenCanvas, fid: string) => {
+        creatingPictureRef.current = { image: image, offScreen: offScreen, fid: fid };
     };
 
     const getCreatingPicture = () => {
