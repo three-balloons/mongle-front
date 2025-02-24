@@ -1,4 +1,4 @@
-import { arrayBufferToBase64, base64ToArrayBuffer } from '@/util/base64';
+import { arrayBufferToBase64, base64ToArrayBuffer } from '@/util/rawData';
 import { WORKSPACE_INNER_HALF_SIZE, WORKSPACE_INNER_SIZE } from '@/util/constant';
 
 /**
