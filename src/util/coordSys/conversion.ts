@@ -175,7 +175,3 @@ export const global2bubbleWithCurve = (curve: Curve2D, bubble: Bubble | undefine
             };
         });
 };
-
-export const getThicknessRatio = (cameraView: ViewCoord) => {
-    return cameraView.size.x / cameraView.pos.width;
-};

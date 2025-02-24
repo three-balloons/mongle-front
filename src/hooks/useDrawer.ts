@@ -1,6 +1,6 @@
 import { useCallback, useRef } from 'react';
 import { useCurve } from '@/objects/curve/useCurve';
-import { getThicknessRatio, view2Point } from '@/util/coordSys/conversion';
+import { view2Point } from '@/util/coordSys/conversion';
 import { useLog } from '@/objects/log/useLog';
 import { useRenderer } from '@/objects/renderer/useRenderer';
 import { curve2Rect } from '@/util/shapes/conversion';
@@ -17,6 +17,7 @@ export const useDrawer = () => {
     const view2BubbleWithVector2D = useBubbleStore((state) => state.view2BubbleWithVector2D);
     const setFocusBubblePath = useBubbleStore((state) => state.setFocusBubblePath);
     const addBubble = useBubbleStore((state) => state.addBubble);
+    const getRatioWithCamera = useBubbleStore((state) => state.getRatioWithCamera);
     const findBubbleByPath = useBubbleStore((state) => state.findBubbleByPath);
     const getBubbleLabel = useBubbleStore((state) => state.getBubbleLabel);
     const setBubbleLabel = useBubbleStore((state) => state.setBubbleLabel);
@@ -96,15 +97,15 @@ export const useDrawer = () => {
                     getNewCurvePath() === '/' ? pos : view2BubbleWithVector2D(pos, cameraView, getNewCurvePath());
                 addControlPoint({ ...position, isVisible: true }, true);
             }
-            const bubbleId = findBubbleByPath(getNewCurvePath())?.id ?? getAndDecreaseNextBubbleId();
+            let bubble: Bubble;
             // 버블 밖에 그릴 경우
             if (getNewCurvePath() === '/') {
                 // 버블 밖에 커브를 그린 경우
+                const bubbleId = getAndDecreaseNextBubbleId();
                 const rect = curve2Rect(getNewCurve(), 10);
                 if (!rect) return;
-                // TODO: useBubble로 id옮기고 bubble => mongle로 변경
                 const bubbleName = 'mongle ' + getBubbleLabel().toString();
-                const bubble: Bubble = {
+                bubble = {
                     id: bubbleId,
                     top: rect.top,
                     left: rect.left,
@@ -126,9 +127,11 @@ export const useDrawer = () => {
                         return { x: pos.x, y: pos.y, isVisible: point.isVisible };
                     }),
                 ]);
+            } else {
+                bubble = findBubbleByPath(getNewCurvePath()) as Bubble;
             }
-            const newCurve: Curve = addNewCurve(getThicknessRatio(cameraView));
-            addCurveCreationLog(newCurve, bubbleId);
+            const newCurve: Curve = addNewCurve(getRatioWithCamera(bubble, cameraView));
+            addCurveCreationLog(newCurve, bubble.id);
             commitLog();
         },
 
