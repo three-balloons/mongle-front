@@ -1,7 +1,7 @@
 import { createContext, useRef } from 'react';
 
 export type PdfContextProps = {
-    setCreatingPdf: (fid: string, offScreen: OffscreenCanvas) => void;
+    setCreatingPdf: (fid: string, workerId: number, pdfName: string, offScreen: OffscreenCanvas) => void;
     getCreatingPdf: () => { fid: string; offScreen: OffscreenCanvas } | undefined;
 
     // TODO selected는 shape로 통합시키기기
@@ -16,10 +16,12 @@ type PdfProviderProps = {
 };
 
 export const PdfProvider: React.FC<PdfProviderProps> = ({ children }) => {
-    const creatingPdfRef = useRef<{ fid: string; offScreen: OffscreenCanvas } | undefined>(undefined);
+    const creatingPdfRef = useRef<
+        { fid: string; offScreen: OffscreenCanvas; workerId: number; pdfName: string } | undefined
+    >(undefined);
     const selectedPdfsRef = useRef<PDF[]>([]);
-    const setCreatingPdf = (fid: string, offScreen: OffscreenCanvas) => {
-        creatingPdfRef.current = { fid: fid, offScreen: offScreen };
+    const setCreatingPdf = (fid: string, workerId: number, pdfName: string, offScreen: OffscreenCanvas) => {
+        creatingPdfRef.current = { fid: fid, offScreen: offScreen, workerId: workerId, pdfName: pdfName };
     };
 
     const getCreatingPdf = () => {

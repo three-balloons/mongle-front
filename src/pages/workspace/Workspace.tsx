@@ -22,6 +22,7 @@ import { useLogStore } from '@/store/useLogStore';
 import { useLogSender } from '@/hooks/useLogSender';
 import { PictureProvider } from '@/objects/picture/PictureProvider';
 import { EXPLORER_MAX_WIDTH, EXPLORER_MIN_WIDTH } from '@/util/constant';
+import { PdfProvider } from '@/objects/pdf/PdfProvider';
 
 type WorkspaceProps = {
     workspaceId: string;
@@ -143,32 +144,34 @@ export const Workspace = ({ workspaceId }: WorkspaceProps) => {
                 {needTutorial && <Tutorial />}
                 <CurveProvider sensitivity={2}>
                     <PictureProvider>
-                        <CameraProvider width={canvasSize.width} height={canvasSize.height}>
-                            <LogProvider>
-                                <RendererProvider theme={workspace.theme} isReadyToShow={isReadyToShow}>
-                                    <div className={style.header}>
-                                        <BackIcon
-                                            className={style.icon}
-                                            onClick={() => {
-                                                if (isDemo) navigator('/login', { replace: true });
-                                                else navigator('/home', { replace: true });
-                                            }}
-                                        ></BackIcon>
-                                        <div className={style.title}>{workspace.name}</div>
-                                    </div>
-                                    <Menu workSpaceResizeHandler={WorkspaceResizeHandler} />
-                                    <div className={cn(style.workspace)}>
-                                        {isShowExplorer && <Explorer resizeHandler={explorerResizeHandler} />}
-                                        <Canvas
-                                            width={canvasSize.width}
-                                            height={canvasSize.height}
-                                            workspaceId={workspaceId}
-                                        />
-                                        {/* <NameInput /> */}
-                                    </div>
-                                </RendererProvider>
-                            </LogProvider>
-                        </CameraProvider>
+                        <PdfProvider>
+                            <CameraProvider width={canvasSize.width} height={canvasSize.height}>
+                                <LogProvider>
+                                    <RendererProvider theme={workspace.theme} isReadyToShow={isReadyToShow}>
+                                        <div className={style.header}>
+                                            <BackIcon
+                                                className={style.icon}
+                                                onClick={() => {
+                                                    if (isDemo) navigator('/login', { replace: true });
+                                                    else navigator('/home', { replace: true });
+                                                }}
+                                            ></BackIcon>
+                                            <div className={style.title}>{workspace.name}</div>
+                                        </div>
+                                        <Menu workSpaceResizeHandler={WorkspaceResizeHandler} />
+                                        <div className={cn(style.workspace)}>
+                                            {isShowExplorer && <Explorer resizeHandler={explorerResizeHandler} />}
+                                            <Canvas
+                                                width={canvasSize.width}
+                                                height={canvasSize.height}
+                                                workspaceId={workspaceId}
+                                            />
+                                            {/* <NameInput /> */}
+                                        </div>
+                                    </RendererProvider>
+                                </LogProvider>
+                            </CameraProvider>
+                        </PdfProvider>
                     </PictureProvider>
                 </CurveProvider>
             </TutorialProvider>

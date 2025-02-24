@@ -91,10 +91,11 @@ type Color =
  * bubble: 버블을 그리는 모드
  * edit: curve, 버블을 수정하고 옮기는 모드
  * picture: 그림을 추가하는 모드
+ * pdf: pdf를 추가하는 모드
  * animate: 이동 관련 애니메이션이 실행할 때의 모드(none이랑 동일)
  * none: 아무것도 안하는 모드
  */
-type ControlMode = 'move' | 'draw' | 'erase' | 'bubble' | 'edit' | 'picture' | 'animate' | 'none';
+type ControlMode = 'move' | 'draw' | 'erase' | 'bubble' | 'edit' | 'picture' | 'pdf' | 'animate' | 'none';
 type TouchState = 'none' | 'command' | 'pan' | 'zoom';
 
 type Theme = '하늘' | '분홍' | '연두' | '노랑' | '하양' | '검정';
