@@ -8,6 +8,7 @@ import {
     bubble2globalWithCurve,
     bubble2globalWithRect,
     global2bubbleWithCurve,
+    global2bubbleWithRect,
     view2Point,
 } from '@/util/coordSys/conversion';
 import { isCollisionRectWithLine, isCollisionWithRect } from '@/util/shapes/collision';
@@ -457,11 +458,11 @@ export const useEditor = () => {
                     getSelectedCurve().flatMap((curve) => bubble2globalWithCurve(curve.position, bubbleView)),
                 );
                 const selectedPictures = getSelectedPictures();
-                if (!coveredRect && selectedPictures.length > 0) coveredRect = selectedPictures[0] as Rect;
+                if (!coveredRect && selectedPictures.length > 0)
+                    coveredRect = bubble2globalWithRect(selectedPictures[0] as Rect, bubbleView);
                 if (coveredRect) {
                     for (const p of selectedPictures) {
                         const picture = bubble2globalWithRect(p, bubbleView);
-
                         const newLeft = Math.min(coveredRect.left, picture.left);
                         const newTop = Math.min(coveredRect.top, picture.top);
                         coveredRect = {
@@ -474,10 +475,10 @@ export const useEditor = () => {
                         };
                     }
                     setEditingRect({
-                        top: coveredRect.top - 3 * BUBBLE_BORDER_WIDTH,
-                        left: coveredRect.left - 3 * BUBBLE_BORDER_WIDTH,
-                        width: coveredRect.width + 6 * BUBBLE_BORDER_WIDTH,
-                        height: coveredRect.height + 6 * BUBBLE_BORDER_WIDTH,
+                        top: coveredRect.top - 2 * BUBBLE_BORDER_WIDTH,
+                        left: coveredRect.left - 2 * BUBBLE_BORDER_WIDTH,
+                        width: coveredRect.width + 4 * BUBBLE_BORDER_WIDTH,
+                        height: coveredRect.height + 4 * BUBBLE_BORDER_WIDTH,
                     });
                 }
 
@@ -521,10 +522,20 @@ export const useEditor = () => {
                     );
                 });
                 getSelectedPictures().forEach((picture) => {
-                    picture.left = picture.left * factorX + movementX;
-                    picture.width = picture.width * factorX;
-                    picture.top = picture.top * factorY + movementY;
-                    picture.height = picture.height * factorY;
+                    const globalPicture = bubble2globalWithRect(picture, bubbleView);
+                    const convertedPicture = global2bubbleWithRect(
+                        {
+                            left: globalPicture.left * factorX + movementX,
+                            width: globalPicture.width * factorX,
+                            top: globalPicture.top * factorY + movementY,
+                            height: globalPicture.height * factorY,
+                        },
+                        bubbleView,
+                    );
+                    picture.left = convertedPicture.left;
+                    picture.width = convertedPicture.width;
+                    picture.top = convertedPicture.top;
+                    picture.height = convertedPicture.height;
                 });
 
                 setEditingRect(rect);
@@ -548,8 +559,18 @@ export const useEditor = () => {
                     );
                 });
                 getSelectedPictures().forEach((picture) => {
-                    picture.left = picture.left + movementX;
-                    picture.top = picture.top + movementY;
+                    const globalPicture = bubble2globalWithRect(picture, bubbleView);
+                    const convertedPicture = global2bubbleWithRect(
+                        {
+                            left: globalPicture.left + movementX,
+                            width: globalPicture.width,
+                            top: globalPicture.top + movementY,
+                            height: globalPicture.height,
+                        },
+                        bubbleView,
+                    );
+                    picture.left = convertedPicture.left;
+                    picture.top = convertedPicture.top;
                 });
                 setEditingRect(preRect);
             }

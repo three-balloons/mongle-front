@@ -14,12 +14,15 @@ import { ChangeEvent, useRef } from 'react';
 import { OFF_SCREEN_HEIGHT, OFF_SCREEN_WIDTH } from '@/util/constant';
 import { usePicture } from '@/objects/picture/usePicture';
 import { useCursorStore } from '@/store/cursorStore';
+import { uploadFileAPI } from '@/api/files/file';
+import { APIException } from '@/api/exceptions';
 
 export const ToolSelect = () => {
     const { setMode, mode } = useConfigStore((state) => state);
     const setCursor = useCursorStore((state) => state.setCursor);
     const { addBubbleIconRef, penIconRef, eraserIconRef, handIconRef } = useTutorial();
     const { setCreatingPicture } = usePicture();
+
     const pictureInputRef = useRef<HTMLInputElement>(null);
 
     const handlePictureButtonClick = () => {
@@ -27,22 +30,37 @@ export const ToolSelect = () => {
         pictureInputRef.current.click();
     };
 
-    const hanldeAddPicture = ({ target }: ChangeEvent<HTMLInputElement>) => {
+    const hanldeAddPicture = async ({ target }: ChangeEvent<HTMLInputElement>) => {
         const file = target?.files?.[0];
         if (file === undefined) return;
-        const image = new Image();
-        const imageUrl = URL.createObjectURL(file);
-        image.src = imageUrl;
-        const offCanvas = new OffscreenCanvas(OFF_SCREEN_WIDTH, OFF_SCREEN_HEIGHT);
-        image.addEventListener(
-            'load',
-            () => {
-                const offContext = offCanvas.getContext('2d');
-                offContext?.drawImage(image, 0, 0, OFF_SCREEN_WIDTH, OFF_SCREEN_HEIGHT);
-            },
-            { once: true },
-        );
-        setCreatingPicture(image, offCanvas);
+        const formData = new FormData();
+        formData.append('file', file);
+        try {
+            const { fid } = await uploadFileAPI(formData);
+
+            const image = new Image();
+            const imageUrl = URL.createObjectURL(file);
+            image.src = imageUrl;
+            const offCanvas = new OffscreenCanvas(OFF_SCREEN_WIDTH, OFF_SCREEN_HEIGHT);
+            image.addEventListener(
+                'load',
+                () => {
+                    const offContext = offCanvas.getContext('2d');
+                    offContext?.drawImage(image, 0, 0, OFF_SCREEN_WIDTH, OFF_SCREEN_HEIGHT);
+                },
+                { once: true },
+            );
+            setCreatingPicture(image, offCanvas, fid);
+        } catch (e) {
+            if (e instanceof APIException) {
+                // TODO
+                console.error(`파일 저장에 실패했습니다 ${e}`);
+                return;
+            } else {
+                // TODO
+                console.error(e);
+            }
+        }
     };
 
     return (
