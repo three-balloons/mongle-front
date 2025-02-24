@@ -52,7 +52,7 @@ export const ControlSelect = () => {
                         value={<ShrinkIcon className={style.large} />}
                         onSelect={() => {
                             if (mode == 'animate') return;
-                            resizeView(-20);
+                            resizeView(-200);
                         }}
                     >
                         <ShrinkIcon className={style.large} />
@@ -62,7 +62,7 @@ export const ControlSelect = () => {
                         value={<EnlargeIcon className={style.large} />}
                         onSelect={() => {
                             if (mode == 'animate') return;
-                            resizeView(20);
+                            resizeView(200);
                         }}
                     >
                         <EnlargeIcon className={style.large} />

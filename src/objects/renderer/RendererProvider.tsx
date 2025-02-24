@@ -90,7 +90,6 @@ export const RendererProvider: React.FC<RendererProviderProps> = ({ children, is
         // Rerenders when canvas view changes
         useViewStore.subscribe((state) => {
             if (state.cameraView) {
-                console.log(state.cameraView);
                 reRender();
             }
         });
@@ -294,8 +293,6 @@ export const RendererProvider: React.FC<RendererProviderProps> = ({ children, is
         if (bubbleView == undefined && !isSamePath) return;
 
         if (context) {
-            // context.beginPath(); // Start a new path
-
             if (getFocusBubblePath() === bubble.path) {
                 context.strokeStyle = getThemeMainColor(theme);
             } else {

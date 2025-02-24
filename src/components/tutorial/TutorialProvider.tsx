@@ -103,7 +103,6 @@ const TutorialProvider = ({ children }: TutorialProviderProps) => {
     };
 
     const changeZIndex = (currentPage: number) => {
-        console.log(addBubbleIconRef.current);
         if (addBubbleIconRef.current) addBubbleIconRef.current.style.zIndex = '0';
         if (penIconRef.current) penIconRef.current.style.zIndex = '0';
         if (eraserIconRef.current) eraserIconRef.current.style.zIndex = '0';

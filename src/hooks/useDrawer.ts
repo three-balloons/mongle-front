@@ -4,8 +4,6 @@ import { view2Point } from '@/util/coordSys/conversion';
 import { useLog } from '@/objects/log/useLog';
 import { useRenderer } from '@/objects/renderer/useRenderer';
 import { curve2Rect } from '@/util/shapes/conversion';
-// import { createBubbleAPI } from '@/api/bubble';
-// import { useParams } from 'react-router-dom';
 import { useBubbleStore } from '@/store/bubbleStore';
 import { WORKSPACE_INNER_HALF_SIZE } from '@/util/constant';
 
@@ -24,8 +22,6 @@ export const useDrawer = () => {
     const getAndDecreaseNextBubbleId = useBubbleStore((state) => state.getAndDecreaseNextBubbleId);
 
     const { reRender } = useRenderer();
-
-    // const { workspaceId } = useParams<{ workspaceId: string }>();
 
     /* logs */
     const { commitLog, addCurveCreationLog, addBubbleCreationLog } = useLog();

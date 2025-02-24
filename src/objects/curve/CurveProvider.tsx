@@ -36,9 +36,6 @@ export const CurveProvider: React.FC<CurveProviderProps> = ({ children, sensitiv
     const findBubbleByPath = useBubbleStore((state) => state.findBubbleByPath);
     const findBubble = useBubbleStore((state) => state.findBubble);
 
-    // const bufferedUpdateCurveRef = useRef<Map<number, { curve: Curve; path: string }>>(new Map());
-    // const bufferedDeleteCurveRef = useRef<Map<number, { curve: Curve; path: string }>>(new Map());
-    // const bufferedCreateCurveRef = useRef<Map<number, { curve: Curve; path: string }>>(new Map());
     const nextBufferedCurveIdRef = useRef(-1);
     const penConfigRef = useRef<PenConfig>(penConfig);
 
@@ -75,7 +72,6 @@ export const CurveProvider: React.FC<CurveProviderProps> = ({ children, sensitiv
             id: nextBufferedCurveIdRef.current,
         };
         const bubble = findBubbleByPath(newCurvePathRef.current);
-        // bufferedCreateCurveRef.current.set(newCurve.id, { curve: newCurve, path: newCurvePathRef.current });
         nextBufferedCurveIdRef.current = nextBufferedCurveIdRef.current - 1;
         if (bubble) bubble.shapes = [...bubble.shapes, newCurve];
 
