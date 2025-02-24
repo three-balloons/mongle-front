@@ -2,11 +2,11 @@ import { APIException } from '@/api/exceptions';
 import { GetFileRes, UploadFileRes } from '@/api/files/type';
 import { mongleApi } from '@/api/mongleApi';
 
-export const uploadFileAPI = async (imgFormData: FormData) => {
+export const uploadFileAPI = async (formFile: FormData) => {
     try {
         const res = await mongleApi.post<FormData, UploadFileRes, 'NOT_SUPPORTED' | 'FILE_TOO_LARGE'>(
-            '/files/temporary ',
-            imgFormData,
+            '/files/temporary',
+            formFile,
         );
         return res;
     } catch (error: unknown) {
