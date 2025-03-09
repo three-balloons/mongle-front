@@ -4,6 +4,7 @@ import { useCamera } from '@/objects/camera/useCamera';
 import { useRenderer } from '@/objects/renderer/useRenderer';
 import { useBubbleStore } from '@/store/bubbleStore';
 import { useConfigStore } from '@/store/configStore';
+import { WORKSPACE_INNER_HALF_SIZE, WORKSPACE_INNER_SIZE } from '@/util/constant';
 import { useCallback, useEffect, useRef } from 'react';
 
 type InputPoint = {
@@ -186,10 +187,11 @@ export const useTouch = () => {
             {
                 ...cameraView,
                 pos: {
-                    left: cameraView.pos.left + (cameraView.pos.width * intensity) / 200,
-                    top: cameraView.pos.top + (cameraView.pos.height * intensity) / 200,
-                    width: (cameraView.pos.width * (100 - intensity)) / 100,
-                    height: (cameraView.pos.height * (100 - intensity)) / 100,
+                    left: cameraView.pos.left + (cameraView.pos.width * intensity) / WORKSPACE_INNER_SIZE,
+                    top: cameraView.pos.top + (cameraView.pos.height * intensity) / WORKSPACE_INNER_SIZE,
+                    width: (cameraView.pos.width * (WORKSPACE_INNER_HALF_SIZE - intensity)) / WORKSPACE_INNER_HALF_SIZE,
+                    height:
+                        (cameraView.pos.height * (WORKSPACE_INNER_HALF_SIZE - intensity)) / WORKSPACE_INNER_HALF_SIZE,
                 },
             },
             showAnimation ? { ...cameraView } : undefined,

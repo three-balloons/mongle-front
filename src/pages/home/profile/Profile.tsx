@@ -1,20 +1,29 @@
-import { getUserAPI } from '@/api/user';
+import { deleteUserAPI, getUserAPI } from '@/api/users/user';
 import { ProfileEditModal } from '@/components/profileEditModal/ProfileEditModal';
 import style from '@/pages/home/profile/profile.module.css';
+import { queryClient } from '@/react-query/quertClient';
 import { useAuthStore } from '@/store/authStore';
 import { cn } from '@/util/cn';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 
 export const Profile = () => {
     const { logout } = useAuthStore((state) => state);
     const navigate = useNavigate();
 
-    const getUserQuery = useQuery({
+    const {
+        data: user,
+        isLoading,
+        isPending,
+        isError,
+    } = useQuery({
         queryKey: ['users'],
-        queryFn: () => {
-            return getUserAPI();
-        },
+        queryFn: () => getUserAPI(),
+    });
+
+    const { mutateAsync: deleteUser } = useMutation({
+        mutationFn: () => deleteUserAPI(),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
     });
 
     const logoutHandler = () => {
@@ -24,10 +33,17 @@ export const Profile = () => {
         });
     };
 
-    if (getUserQuery.isLoading || getUserQuery.isPending) return <>로딩중</>;
-    if (getUserQuery.isError) return <>에러입니다 ㅠ.ㅠ</>;
-    if (!getUserQuery.data) return <>로딩중</>;
-    const user = getUserQuery.data; // bubble 구조 잡고 수정
+    const withdrawHandler = async () => {
+        await deleteUser();
+        logout();
+        navigate('/login', {
+            replace: true,
+        });
+    };
+
+    if (isLoading || isPending) return <>로딩중</>;
+    if (isError) return <>에러입니다 ㅠ.ㅠ</>;
+    if (!user) return <>로딩중</>;
 
     return (
         <div className={style.default}>
@@ -39,7 +55,7 @@ export const Profile = () => {
                 </div>
                 <div className={style.profile}>
                     <div>이메일</div>
-                    <div>{user.email}</div>
+                    <div>{user.email ?? '-'}</div>
                 </div>
                 <div className={style.profile}>
                     <div>로그인 방식</div>
@@ -55,7 +71,9 @@ export const Profile = () => {
                 <div className={cn(style.profile, style.touchable)}>
                     <div onClick={() => logoutHandler()}>로그아웃</div>
                 </div>
-                <div className={style.withdraw}>계정삭제</div>
+                <div className={(style.withdraw, style.touchable)}>
+                    <div onClick={() => withdrawHandler()}>계정삭제</div>
+                </div>
             </div>
         </div>
     );

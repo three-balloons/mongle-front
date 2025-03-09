@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react';
 import Select from '@/headless/select/Select';
 import { ReactComponent as ModifyIcon } from '@/assets/icon/modify.svg';
 import { ReactComponent as SettingIcon } from '@/assets/icon/setting.svg';
-import { deleteWorkspaceAPI, updateWorkspaceAPI } from '@/api/workspace';
+import { deleteWorkspaceAPI, updateWorkspaceAPI } from '@/api/workspaces/workspace';
 import { useMutation } from '@tanstack/react-query';
 import { queryClient } from '@/react-query/quertClient';
 
@@ -36,10 +36,7 @@ export const WorkspaceSettingModal = ({ workspace, className }: WorkspaceSetting
         updateWorkspace(
             { workspaceId: workspace.id, name: name, theme: theme as string },
             {
-                onSuccess: () => {
-                    console.log('저장 성공');
-                    queryClient.invalidateQueries({ queryKey: ['workspaces'] });
-                },
+                onSuccess: () => queryClient.invalidateQueries({ queryKey: ['workspaces'] }),
             },
         );
         return;
@@ -48,10 +45,7 @@ export const WorkspaceSettingModal = ({ workspace, className }: WorkspaceSetting
         deleteWorkspace(
             { workspaceId: workspace.id },
             {
-                onSuccess: () => {
-                    console.log('삭제 성공');
-                    queryClient.invalidateQueries({ queryKey: ['workspaces'] });
-                },
+                onSuccess: () => queryClient.invalidateQueries({ queryKey: ['workspaces'] }),
             },
         );
         return;
@@ -145,30 +139,6 @@ export const WorkspaceSettingModal = ({ workspace, className }: WorkspaceSetting
                                 <div className={cn(theme == '노랑' && style.themeSelected)}>노랑</div>
                             </div>
                         </Select.Option>
-                        {/* <Select.Option
-                            className={style.option}
-                            value={theme}
-                            onSelect={() => {
-                                setTheme('하양');
-                            }}
-                        >
-                            <div className={cn(colorStyle.themeWhite, style.themeOption)}>
-                                <div className={style.colorSample}></div>
-                                <div className={cn(theme == '하양' && style.themeSelected)}>하양</div>
-                            </div>
-                        </Select.Option>
-                        <Select.Option
-                            className={style.option}
-                            value={theme}
-                            onSelect={() => {
-                                setTheme('검정');
-                            }}
-                        >
-                            <div className={cn(colorStyle.themeBlack, style.themeOption)}>
-                                <div className={style.colorSample}></div>
-                                <div className={cn(theme == '검정' && style.themeSelected)}>검정</div>
-                            </div>
-                        </Select.Option> */}
                     </Select.Content>
                 </Select>
                 <div className={style.mutateButtonWrapper}>

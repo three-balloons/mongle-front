@@ -111,6 +111,21 @@ export const createAPI = () => {
         }
     };
 
-    return { get: _get, post: _post, put: _put, delete: _delete };
+    const _patch = async <TData, TRes, ErrCode extends APIExceptionCode>(
+        url: string,
+        data?: TData,
+        config?: AxiosRequestConfig,
+    ): Promise<TRes> => {
+        try {
+            const { data: res } = await axiosInstance.patch<APIResponse<TRes, ErrCode>>(url, data, config);
+            if (isOkResponse(res)) return res.data;
+            else throw new APIException<ErrCode>(res.code, res.message);
+        } catch (error: unknown) {
+            if (error instanceof AxiosError) throw new Error(error.message);
+            throw error;
+        }
+    };
+
+    return { get: _get, post: _post, put: _put, delete: _delete, patch: _patch };
 };
 export const mongleApi = createAPI();

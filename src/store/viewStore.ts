@@ -1,4 +1,5 @@
 import { createStore } from '@/store/store';
+import { WORKSPACE_INNER_HALF_SIZE } from '@/util/constant';
 
 type State = {
     cameraView: ViewCoord;
@@ -12,13 +13,13 @@ type Store = State & Action;
 export const useViewStore = createStore<Store>((set) => ({
     cameraView: {
         pos: {
-            top: -50,
-            left: -50,
-            width: 100,
-            height: 100,
+            top: -(WORKSPACE_INNER_HALF_SIZE / 2),
+            left: -(WORKSPACE_INNER_HALF_SIZE / 2),
+            width: WORKSPACE_INNER_HALF_SIZE,
+            height: WORKSPACE_INNER_HALF_SIZE,
         },
         path: '/',
-        size: { x: 100, y: 100 },
+        size: { x: WORKSPACE_INNER_HALF_SIZE, y: WORKSPACE_INNER_HALF_SIZE },
     },
     setCameraView: (cameraView) => set({ cameraView: cameraView }),
 }));

@@ -6,34 +6,24 @@ import style from '@/pages/login/admin/admin.module.css';
 import { useNavigate } from 'react-router-dom';
 
 import { useMutation } from '@tanstack/react-query';
-import { testLoginAPI } from '@/api/auth';
+import { testLoginAPI } from '@/api/auth/auth';
 import { useAuthStore } from '@/store/authStore';
 import { APIException } from '@/api/exceptions';
 import { cn } from '@/util/cn';
 
 const ADMIN_LOGIN_PASSWORD = import.meta.env.VITE_ADMIN_LOGIN_PASSWORD;
 
-const googleLogin = async (oauth_id: string) => {
-    const { accessToken } = await testLoginAPI({
-        provider: 'GOOGLE',
-        oauth_id: oauth_id,
-        name: oauth_id,
-    });
+const testLogin = async () => {
+    const { accessToken } = await testLoginAPI();
     return {
         accessToken,
     };
 };
 
 export const Admin = () => {
-    const [authId, setauthId] = useState('');
     const [password, setPassword] = useState('');
     const [isValidPassword, setIsValidPassword] = useState(true);
     const { login } = useAuthStore((state) => state);
-
-    const idChangeHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
-        event.preventDefault();
-        setauthId(event.target.value);
-    };
 
     const passwordChangeHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
         event.preventDefault();
@@ -43,7 +33,7 @@ export const Admin = () => {
     const navigate = useNavigate();
 
     const loginMutation = useMutation({
-        mutationFn: googleLogin,
+        mutationFn: testLogin,
         onSuccess({ accessToken }) {
             login(accessToken);
             navigate('/home', { replace: true });
@@ -64,7 +54,7 @@ export const Admin = () => {
             return;
         }
 
-        loginMutation.mutate(authId);
+        loginMutation.mutate();
     };
 
     return (
@@ -76,21 +66,6 @@ export const Admin = () => {
             <div className={style.back} onClick={() => navigate(-1)}>
                 이전 페이지로 돌아가기
             </div>
-            <label className={style.input}>
-                <span>아이디</span>
-                <input
-                    enterKeyHint="done"
-                    type="text"
-                    minLength={3}
-                    maxLength={15}
-                    placeholder="아이디를 입력해주세요"
-                    value={authId}
-                    onKeyDown={(e) => {
-                        if (e.key === 'Enter') e.currentTarget.blur();
-                    }}
-                    onChange={idChangeHandler}
-                />
-            </label>
             <label className={style.input}>
                 <span>비밀번호</span>
                 <input

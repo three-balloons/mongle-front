@@ -1,12 +1,11 @@
 import { useCallback, useRef } from 'react';
 import { useCurve } from '@/objects/curve/useCurve';
-import { getThicknessRatio, view2Point } from '@/util/coordSys/conversion';
+import { view2Point } from '@/util/coordSys/conversion';
 import { useLog } from '@/objects/log/useLog';
 import { useRenderer } from '@/objects/renderer/useRenderer';
 import { curve2Rect } from '@/util/shapes/conversion';
-// import { createBubbleAPI } from '@/api/bubble';
-// import { useParams } from 'react-router-dom';
 import { useBubbleStore } from '@/store/bubbleStore';
+import { WORKSPACE_INNER_HALF_SIZE } from '@/util/constant';
 
 // functions about pen drawing
 // features: draw curve
@@ -16,12 +15,13 @@ export const useDrawer = () => {
     const view2BubbleWithVector2D = useBubbleStore((state) => state.view2BubbleWithVector2D);
     const setFocusBubblePath = useBubbleStore((state) => state.setFocusBubblePath);
     const addBubble = useBubbleStore((state) => state.addBubble);
+    const getRatioWithCamera = useBubbleStore((state) => state.getRatioWithCamera);
+    const findBubbleByPath = useBubbleStore((state) => state.findBubbleByPath);
     const getBubbleLabel = useBubbleStore((state) => state.getBubbleLabel);
     const setBubbleLabel = useBubbleStore((state) => state.setBubbleLabel);
+    const getAndDecreaseNextBubbleId = useBubbleStore((state) => state.getAndDecreaseNextBubbleId);
 
     const { reRender } = useRenderer();
-
-    // const { workspaceId } = useParams<{ workspaceId: string }>();
 
     /* logs */
     const { commitLog, addCurveCreationLog, addBubbleCreationLog } = useLog();
@@ -69,7 +69,10 @@ export const useDrawer = () => {
 
                 if (
                     getNewCurvePath() !== '/' &&
-                    (position.x < -100 || position.x > 100 || position.y < -100 || position.y > 100)
+                    (position.x < -WORKSPACE_INNER_HALF_SIZE ||
+                        position.x >= WORKSPACE_INNER_HALF_SIZE ||
+                        position.y < -WORKSPACE_INNER_HALF_SIZE ||
+                        position.y >= WORKSPACE_INNER_HALF_SIZE)
                 ) {
                     return;
                 }
@@ -90,14 +93,16 @@ export const useDrawer = () => {
                     getNewCurvePath() === '/' ? pos : view2BubbleWithVector2D(pos, cameraView, getNewCurvePath());
                 addControlPoint({ ...position, isVisible: true }, true);
             }
+            let bubble: Bubble;
             // 버블 밖에 그릴 경우
             if (getNewCurvePath() === '/') {
                 // 버블 밖에 커브를 그린 경우
+                const bubbleId = getAndDecreaseNextBubbleId();
                 const rect = curve2Rect(getNewCurve(), 10);
                 if (!rect) return;
-                // TODO: useBubble로 id옮기고 bubble => mongle로 변경
                 const bubbleName = 'mongle ' + getBubbleLabel().toString();
-                const bubble: Bubble = {
+                bubble = {
+                    id: bubbleId,
                     top: rect.top,
                     left: rect.left,
                     height: rect.height,
@@ -105,8 +110,6 @@ export const useDrawer = () => {
                     path: '/' + bubbleName,
                     name: bubbleName,
                     shapes: [],
-                    isBubblized: false,
-                    isVisible: true,
                     nameSizeInCanvas: 0,
                 };
                 setBubbleLabel(getBubbleLabel() + 1);
@@ -120,9 +123,11 @@ export const useDrawer = () => {
                         return { x: pos.x, y: pos.y, isVisible: point.isVisible };
                     }),
                 ]);
+            } else {
+                bubble = findBubbleByPath(getNewCurvePath()) as Bubble;
             }
-            const newCurve: Curve = addNewCurve(getThicknessRatio(cameraView));
-            addCurveCreationLog(newCurve, getNewCurvePath());
+            const newCurve: Curve = addNewCurve(getRatioWithCamera(bubble, cameraView));
+            addCurveCreationLog(newCurve, bubble.id);
             commitLog();
         },
 

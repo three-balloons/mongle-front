@@ -1,8 +1,8 @@
 import { useLog } from '@/objects/log/useLog';
 import { useRenderer } from '@/objects/renderer/useRenderer';
 // import { useConfigStore } from '@/store/configStore';
-import { MINIMUN_RENDERED_BUBBLE_SIZE } from '@/util/constant';
-import { global2bubbleWithRect, rect2View, view2Point } from '@/util/coordSys/conversion';
+import { MINIMUN_RENDERED_BUBBLE_RATE, WORKSPACE_INNER_HALF_SIZE } from '@/util/constant';
+import { global2bubbleWithRect, view2Point } from '@/util/coordSys/conversion';
 // import { getParentPath } from '@/util/path/path';
 import { /*isCollisionWithRect, */ isCollisionWithRectExceptIncluding } from '@/util/shapes/collision';
 // import { subVector2D } from '@/util/shapes/operator';
@@ -27,18 +27,18 @@ export const useBubbleGun = () => {
 
     // const getBubbles = useBubbleStore((state) => state.getBubbles);
     // const getRatioWithCamera = useBubbleStore((state) => state.getRatioWithCamera);
-    const findBubble = useBubbleStore((state) => state.findBubble);
+    const findBubbleByPath = useBubbleStore((state) => state.findBubbleByPath);
     const setBubbleLabel = useBubbleStore((state) => state.setBubbleLabel);
     const getBubbleLabel = useBubbleStore((state) => state.getBubbleLabel);
     const descendant2child = useBubbleStore((state) => state.descendant2child);
     // const view2BubbleWithVector2D = useBubbleStore((state) => state.view2BubbleWithVector2D);
     const view2BubbleWithRect = useBubbleStore((state) => state.view2BubbleWithRect);
+    const getRatioWithCamera = useBubbleStore((state) => state.getRatioWithCamera);
     const getChildBubbles = useBubbleStore((state) => state.getChildBubbles);
     const getDescendantBubbles = useBubbleStore((state) => state.getDescendantBubbles);
-    const { /*bubbleTransitAnimation, */ reRender } = useRenderer();
-    // const { workspaceId } = useParams<{ workspaceId: string }>();
+    const getAndDecreaseNextBubbleId = useBubbleStore((state) => state.getAndDecreaseNextBubbleId);
 
-    const { setDraggingRect, getDraggingRect } = useRenderer();
+    const { setDraggingRect, getDraggingRect, reRender } = useRenderer();
     /* logs */
     const { commitLog, addBubbleCreationLog /*addBubbleUpdateLog*/ } = useLog();
 
@@ -87,8 +87,8 @@ export const useBubbleGun = () => {
     const finishCreateBubble = useCallback((cameraView: ViewCoord) => {
         const bubbleRect = getDraggingRect();
         if (!bubbleRect) return;
-        const { height, width } = rect2View(bubbleRect, cameraView);
-        if (height < MINIMUN_RENDERED_BUBBLE_SIZE || width < MINIMUN_RENDERED_BUBBLE_SIZE) {
+        const ratio = getRatioWithCamera({ ...bubbleRect, path: createdBubblePathRef.current } as Bubble, cameraView);
+        if (!ratio || ratio * 2 < MINIMUN_RENDERED_BUBBLE_RATE) {
             console.error('생성하려는 버블의 크기가 너무 작습니다');
             return;
         }
@@ -99,10 +99,10 @@ export const useBubbleGun = () => {
         const currentRect = view2BubbleWithRect(bubbleRect, cameraView, createdBubblePathRef.current);
         if (
             createdBubblePathRef.current != '/' &&
-            (currentRect.top < -100 ||
-                currentRect.top + currentRect.height > 100 ||
-                currentRect.left < -100 ||
-                currentRect.left + currentRect.width > 100)
+            (currentRect.top < -WORKSPACE_INNER_HALF_SIZE ||
+                currentRect.top + currentRect.height >= WORKSPACE_INNER_HALF_SIZE ||
+                currentRect.left < -WORKSPACE_INNER_HALF_SIZE ||
+                currentRect.left + currentRect.width >= WORKSPACE_INNER_HALF_SIZE)
         )
             isCollision = true;
         if (isCollision) {
@@ -113,18 +113,17 @@ export const useBubbleGun = () => {
 
         const bubble: Bubble = {
             ...bubbleRect,
+            id: getAndDecreaseNextBubbleId(),
             path:
                 createdBubblePathRef.current == '/'
                     ? '/' + bubbleName
                     : createdBubblePathRef.current + '/' + bubbleName,
             name: bubbleName,
             shapes: [],
-            isBubblized: false,
-            isVisible: true,
             nameSizeInCanvas: 0,
         };
 
-        const parentBubble = findBubble(createdBubblePathRef.current);
+        const parentBubble = findBubbleByPath(createdBubblePathRef.current);
         if (parentBubble) {
             const bubbleView = descendant2child(parentBubble, cameraView.path);
             const rect = global2bubbleWithRect(bubbleRect, bubbleView);
@@ -133,7 +132,7 @@ export const useBubbleGun = () => {
             bubble.top = rect.top;
             bubble.left = rect.left;
         }
-        const childrenPaths = getChildBubbles(createdBubblePathRef.current)
+        const childrenIds = getChildBubbles(createdBubblePathRef.current)
             .filter((child) => {
                 // isInside 유틸함수 만들기
                 if (
@@ -145,10 +144,10 @@ export const useBubbleGun = () => {
                     return true;
             })
             .map((child) => {
-                return child.path;
+                return child.id;
             });
 
-        addBubbleCreationLog(bubble, childrenPaths);
+        addBubbleCreationLog(bubble, childrenIds);
         commitLog();
 
         // if (workspaceId) {
@@ -157,7 +156,7 @@ export const useBubbleGun = () => {
         //         // TODO: 자식 path 변경 사항 api로 전달
         //     }
         // }
-        addBubble(bubble, childrenPaths);
+        addBubble(bubble, childrenIds);
         setFocusBubblePath(bubble.path);
 
         setBubbleLabel(getBubbleLabel() + 1);

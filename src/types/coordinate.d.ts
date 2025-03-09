@@ -14,7 +14,7 @@ type ViewCoord = {
 
 /**
  * Poloar coordinate system
- * @field angle: [0, 360), radius: (0, 100] except for root
+ * @field angle: [0, 360), radius: [0, WORKSPACE_INNER_SIZE) except for root
  */
 type PolarCoord = {
     path: string;
@@ -24,7 +24,7 @@ type PolarCoord = {
 
 /**
  * Cartesian coordinate system
- * @field x: [-100, 100], y: [-100, 100] except for root
+ * @field x: [-WORKSPACE_INNER_HALF_SIZE, WORKSPACE_INNER_HALF_SIZE), y: [-WORKSPACE_INNER_HALF_SIZE, WORKSPACE_INNER_HALF_SIZE) except for root
  */
 type RectCoord = {
     path: string;

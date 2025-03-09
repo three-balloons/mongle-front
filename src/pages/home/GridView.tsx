@@ -1,5 +1,5 @@
-import { getUserAPI } from '@/api/user';
-import { getAllWorkspaceAPI } from '@/api/workspace';
+import { getUserAPI } from '@/api/users/user';
+import { getAllWorkspaceAPI } from '@/api/workspaces/workspace';
 import { CreateWorkspaceModal } from '@/components/createWorkspaceModal/CreateWorkspaceModal';
 import { WorkspaceSettingModal } from '@/components/workspaceSettingModal/WorkspaceSettingModal';
 import style from '@/pages/home/grid-view.module.css';
@@ -13,16 +13,12 @@ export const GridView = () => {
     const navigate = useNavigate();
     const workspacesQuery = useQuery({
         queryKey: ['workspaces'],
-        queryFn: () => {
-            return getAllWorkspaceAPI();
-        },
+        queryFn: () => getAllWorkspaceAPI(),
     });
 
     const getUserQuery = useQuery({
-        queryKey: ['user'],
-        queryFn: () => {
-            return getUserAPI();
-        },
+        queryKey: ['users'],
+        queryFn: () => getUserAPI(),
     });
 
     if (workspacesQuery.isLoading || workspacesQuery.isPending) return <>로딩중</>;

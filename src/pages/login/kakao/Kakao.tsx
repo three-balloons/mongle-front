@@ -1,4 +1,4 @@
-import { getAccessTokenAPI } from '@/api/auth';
+import { getAccessTokenAPI } from '@/api/auth/auth';
 
 import { stringify, parse } from 'qs';
 import { useEffect } from 'react';
@@ -27,7 +27,7 @@ const kakaoLogin = async (code: string) => {
     const { accessToken } = await getAccessTokenAPI({
         provider: 'KAKAO',
         code: code,
-        redirect_uri: `${window.location.origin}/login/kakao`,
+        redirectUri: `${window.location.origin}/login/kakao`,
     });
     return {
         accessToken,

@@ -1,6 +1,3 @@
-// import { isCollisionPointWithRect } from '@/util/shapes/collision';
-// import { findBubble } from '@/util/bubble/bubble';
-
 // idea: forward kinematics
 /** 좌표 변환 과정(obj의 로컬 좌표 -> view 좌표(canvas에 보이는 좌표))
  * 1. bubble
@@ -21,6 +18,8 @@
  *    functions: point2View, curve2View, rect2View
  *
  */
+
+import { WORKSPACE_INNER_HALF_SIZE, WORKSPACE_INNER_SIZE } from '@/util/constant';
 
 export const point2View = (point: Point, cameraView: ViewCoord): Vector2D => {
     // if (!isCollisionPointWithRect(point, cameraView.pos)) return undefined;
@@ -102,8 +101,8 @@ export const bubble2globalWithPoint = (point: Point, bubble: Bubble | undefined)
     else
         return {
             isVisible: point.isVisible,
-            y: (bubble.height * (100 + point.y)) / 200 + bubble.top,
-            x: (bubble.width * (100 + point.x)) / 200 + bubble.left,
+            y: (bubble.height * (WORKSPACE_INNER_HALF_SIZE + point.y)) / WORKSPACE_INNER_SIZE + bubble.top,
+            x: (bubble.width * (WORKSPACE_INNER_HALF_SIZE + point.x)) / WORKSPACE_INNER_SIZE + bubble.left,
         };
 };
 
@@ -116,8 +115,8 @@ export const bubble2globalWithCurve = (curve: Curve2D, bubble: Bubble | undefine
         return curve.map((point) => {
             return {
                 isVisible: point.isVisible,
-                x: (bubble.width * (100 + point.x)) / 200 + bubble.left,
-                y: (bubble.height * (100 + point.y)) / 200 + bubble.top,
+                x: (bubble.width * (WORKSPACE_INNER_HALF_SIZE + point.x)) / WORKSPACE_INNER_SIZE + bubble.left,
+                y: (bubble.height * (WORKSPACE_INNER_HALF_SIZE + point.y)) / WORKSPACE_INNER_SIZE + bubble.top,
             };
         });
 };
@@ -129,10 +128,10 @@ export const bubble2globalWithRect = (rect: Rect, bubble: Bubble | undefined): R
     if (bubble == undefined) return rect;
     else
         return {
-            top: (bubble.height * (100 + rect.top)) / 200 + bubble.top,
-            left: (bubble.width * (100 + rect.left)) / 200 + bubble.left,
-            height: (bubble.height * rect.height) / 200,
-            width: (bubble.width * rect.width) / 200,
+            top: (bubble.height * (WORKSPACE_INNER_HALF_SIZE + rect.top)) / WORKSPACE_INNER_SIZE + bubble.top,
+            left: (bubble.width * (WORKSPACE_INNER_HALF_SIZE + rect.left)) / WORKSPACE_INNER_SIZE + bubble.left,
+            height: (bubble.height * rect.height) / WORKSPACE_INNER_SIZE,
+            width: (bubble.width * rect.width) / WORKSPACE_INNER_SIZE,
         };
 };
 
@@ -143,10 +142,10 @@ export const global2bubbleWithRect = (rect: Rect, bubble: Bubble | Rect | undefi
     if (bubble == undefined) return rect;
     else
         return {
-            top: ((rect.top - bubble.top) * 200) / bubble.height - 100,
-            left: ((rect.left - bubble.left) * 200) / bubble.width - 100,
-            height: (rect.height * 200) / bubble.height,
-            width: (rect.width * 200) / bubble.width,
+            top: ((rect.top - bubble.top) * WORKSPACE_INNER_SIZE) / bubble.height - WORKSPACE_INNER_HALF_SIZE,
+            left: ((rect.left - bubble.left) * WORKSPACE_INNER_SIZE) / bubble.width - WORKSPACE_INNER_HALF_SIZE,
+            height: (rect.height * WORKSPACE_INNER_SIZE) / bubble.height,
+            width: (rect.width * WORKSPACE_INNER_SIZE) / bubble.width,
         };
 };
 
@@ -157,8 +156,8 @@ export const global2bubbleWithVector2D = (point: Vector2D, bubble: Bubble | unde
     if (bubble == undefined) return point;
     else
         return {
-            y: ((point.y - bubble.top) * 200) / bubble.height - 100,
-            x: ((point.x - bubble.left) * 200) / bubble.width - 100,
+            y: ((point.y - bubble.top) * WORKSPACE_INNER_SIZE) / bubble.height - WORKSPACE_INNER_HALF_SIZE,
+            x: ((point.x - bubble.left) * WORKSPACE_INNER_SIZE) / bubble.width - WORKSPACE_INNER_HALF_SIZE,
         };
 };
 
@@ -170,13 +169,9 @@ export const global2bubbleWithCurve = (curve: Curve2D, bubble: Bubble | undefine
     else
         return curve.map(({ x, y, isVisible }) => {
             return {
-                y: ((y - bubble.top) * 200) / bubble.height - 100,
-                x: ((x - bubble.left) * 200) / bubble.width - 100,
+                y: ((y - bubble.top) * WORKSPACE_INNER_SIZE) / bubble.height - WORKSPACE_INNER_HALF_SIZE,
+                x: ((x - bubble.left) * WORKSPACE_INNER_SIZE) / bubble.width - WORKSPACE_INNER_HALF_SIZE,
                 isVisible: isVisible,
             };
         });
-};
-
-export const getThicknessRatio = (cameraView: ViewCoord) => {
-    return cameraView.size.x / cameraView.pos.width;
 };

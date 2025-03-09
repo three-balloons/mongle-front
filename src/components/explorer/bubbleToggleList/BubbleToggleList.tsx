@@ -7,11 +7,12 @@ import { useConfigStore } from '@/store/configStore';
 import { useCamera } from '@/objects/camera/useCamera';
 import { useLog } from '@/objects/log/useLog';
 import { useEffect, useRef, useState } from 'react';
-import { changeBubbleInfoAPI } from '@/api/bubble';
+import { updateBubbleAPI } from '@/api/bubbles/bubble';
 import { useParams } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { queryClient } from '@/react-query/quertClient';
 import { useBubbleStore } from '@/store/bubbleStore';
+import { APIException } from '@/api/exceptions';
 
 type BubbleToggleListProps = {
     name: string;
@@ -24,6 +25,7 @@ export const BubbleToggleList = ({ name, children, path, className }: BubbleTogg
     const { getCameraView } = useRenderer();
     const { zoomBubble, updateCameraView } = useCamera();
     const setFocusBubblePath = useBubbleStore((state) => state.setFocusBubblePath);
+    const findBubbleByPath = useBubbleStore((state) => state.findBubbleByPath);
     const { addCameraUpdateLog, commitLog } = useLog();
     const { mode } = useConfigStore((state) => state);
     const { workspaceId } = useParams();
@@ -118,12 +120,15 @@ export const BubbleToggleList = ({ name, children, path, className }: BubbleTogg
     };
 
     const { mutate: changeBubbleName } = useMutation({
-        mutationFn: ({ workspaceId, path, name }: { workspaceId: string; path: string; name: string }) =>
-            changeBubbleInfoAPI({
-                workspaceId: workspaceId,
-                path: path,
+        mutationFn: ({ workspaceId, path, name }: { workspaceId: string; path: string; name: string }) => {
+            const bubble = findBubbleByPath(path);
+            if (!bubble) throw new APIException('NOT_EXIST', 'bubble을 찾을 수 없습니다');
+            return updateBubbleAPI({
+                workspaceId,
+                bubbleId: bubble.id,
                 name: name,
-            }),
+            });
+        },
     });
 
     const handleBlur = async (index: number) => {

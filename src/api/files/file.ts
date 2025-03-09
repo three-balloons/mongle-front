@@ -1,9 +1,6 @@
 import { APIException } from '@/api/exceptions';
+import { GetFileRes, UploadFileRes } from '@/api/files/type';
 import { mongleApi } from '@/api/mongleApi';
-
-interface UploadFileRes {
-    fid: string;
-}
 
 export const uploadFileAPI = async (imgFormData: FormData) => {
     try {
@@ -21,8 +18,6 @@ export const uploadFileAPI = async (imgFormData: FormData) => {
         throw error;
     }
 };
-
-type GetFileRes = Blob;
 
 export const getFileAPI = async (fid: string) => {
     try {

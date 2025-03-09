@@ -5,14 +5,13 @@ import { usePicture } from '@/objects/picture/usePicture';
 import { useBubbleStore } from '@/store/bubbleStore';
 import { useConfigStore } from '@/store/configStore';
 import { useViewStore } from '@/store/viewStore';
-import { MINIMUN_RENDERED_BUBBLE_SIZE, OFF_SCREEN_HEIGHT, OFF_SCREEN_WIDTH } from '@/util/constant';
 import {
-    bubble2globalWithCurve,
-    bubble2globalWithRect,
-    curve2View,
-    getThicknessRatio,
-    rect2View,
-} from '@/util/coordSys/conversion';
+    MINIMUN_RENDERED_BUBBLE_RATE,
+    OFF_SCREEN_HEIGHT,
+    OFF_SCREEN_WIDTH,
+    WORKSPACE_INNER_HALF_SIZE,
+} from '@/util/constant';
+import { bubble2globalWithCurve, bubble2globalWithRect, curve2View, rect2View } from '@/util/coordSys/conversion';
 import { getThemeMainColor, getThemeSecondColor } from '@/util/getThemeStyle';
 import { catmullRom2Bezier } from '@/util/shapes/conversion';
 import { easeInOutCubic } from '@/util/transition/transtion';
@@ -81,7 +80,7 @@ export const RendererProvider: React.FC<RendererProviderProps> = ({ children, is
     const { getSelectedPictures } = usePicture();
     const getFocusBubblePath = useBubbleStore((state) => state.getFocusBubblePath);
     const getBubbles = useBubbleStore((state) => state.getBubbles);
-    const findBubble = useBubbleStore((state) => state.findBubble);
+    const findBubbleByPath = useBubbleStore((state) => state.findBubbleByPath);
     const descendant2child = useBubbleStore((state) => state.descendant2child);
     const getRatioWithCamera = useBubbleStore((state) => state.getRatioWithCamera);
     const { addCurveDeletionLog } = useLog();
@@ -91,7 +90,6 @@ export const RendererProvider: React.FC<RendererProviderProps> = ({ children, is
         // Rerenders when canvas view changes
         useViewStore.subscribe((state) => {
             if (state.cameraView) {
-                console.log('reRender');
                 reRender();
             }
         });
@@ -155,7 +153,7 @@ export const RendererProvider: React.FC<RendererProviderProps> = ({ children, is
         renderer();
 
         editingRectRef.current && draggingRectRender(editingRectRef.current);
-        movementBubbleRender();
+        // movementBubbleRender();
     };
 
     const clearLayerRenderer = (canvas: HTMLCanvasElement) => {
@@ -176,7 +174,7 @@ export const RendererProvider: React.FC<RendererProviderProps> = ({ children, is
         const context = canvas.getContext('2d');
         if (context) {
             applyPenConfig(context);
-            setThicknessWithRatio(context, getThicknessRatio(getCameraView()));
+            setThicknessWithRatio(context, 1);
             context.beginPath();
             context.moveTo(startPoint.x, startPoint.y);
             context.lineTo(endPoint.x, endPoint.y);
@@ -186,6 +184,7 @@ export const RendererProvider: React.FC<RendererProviderProps> = ({ children, is
 
     /**
      * addControlPoint가 true일 때 실행
+     * creating curve rendering
      */
     const curveRenderer = (curve: Curve2D) => {
         if (!creationLayerRef.current) {
@@ -198,7 +197,7 @@ export const RendererProvider: React.FC<RendererProviderProps> = ({ children, is
             context.clearRect(0, 0, canvas.width, canvas.height);
             applyPenConfig(context);
 
-            const parentBubble = findBubble(getNewCurvePath());
+            const parentBubble = findBubbleByPath(getNewCurvePath());
             let c = curve;
             if (parentBubble) {
                 const bubbleView = descendant2child(parentBubble, cameraView.path);
@@ -238,6 +237,9 @@ export const RendererProvider: React.FC<RendererProviderProps> = ({ children, is
         }
     };
 
+    /**
+     * rendering in main layer
+     */
     const renderer = () => {
         if (!mainLayerRef.current) {
             return;
@@ -248,9 +250,7 @@ export const RendererProvider: React.FC<RendererProviderProps> = ({ children, is
             context.clearRect(0, 0, canvas.width, canvas.height);
             const bubbles = [...getBubbles()];
             for (const bubble of bubbles) {
-                if (!bubble.isBubblized) {
-                    bubbleRender(bubble);
-                }
+                bubbleRender(bubble);
             }
         }
     };
@@ -278,10 +278,9 @@ export const RendererProvider: React.FC<RendererProviderProps> = ({ children, is
      * bubble과 그 내부의 요소를 렌더링함
      */
     const bubbleRender = (bubble: Bubble) => {
-        if (!bubble.isVisible) return;
         const cameraView = getCameraView();
         const ratio = getRatioWithCamera(bubble, cameraView);
-        if (ratio && ratio * cameraView.size.x < MINIMUN_RENDERED_BUBBLE_SIZE) {
+        if (ratio && ratio < MINIMUN_RENDERED_BUBBLE_RATE) {
             return;
         }
         if (!mainLayerRef.current) {
@@ -289,31 +288,30 @@ export const RendererProvider: React.FC<RendererProviderProps> = ({ children, is
         }
         const canvas: HTMLCanvasElement = mainLayerRef.current;
         const context = canvas.getContext('2d');
+        const isSamePath = bubble.path === cameraView.path;
         const bubbleView = descendant2child(bubble, cameraView.path);
-        if (bubbleView == undefined) return;
-        const rect: Rect = rect2View(
-            {
-                height: bubbleView.height,
-                width: bubbleView.width,
-                top: bubbleView.top,
-                left: bubbleView.left,
-            },
-            cameraView,
-        );
-        if (context) {
-            // context.beginPath(); // Start a new path
+        if (bubbleView == undefined && !isSamePath) return;
 
+        if (context) {
             if (getFocusBubblePath() === bubble.path) {
                 context.strokeStyle = getThemeMainColor(theme);
             } else {
                 context.strokeStyle = getThemeSecondColor(theme);
             }
-            if (isShowBubbleRef.current || getFocusBubblePath() === bubble.path) {
+            // camera안에 잡힌 버블은 완전 생성
+            if (bubbleView && (isShowBubbleRef.current || getFocusBubblePath() === bubble.path)) {
+                const rect: Rect = rect2View(
+                    {
+                        height: bubbleView.height,
+                        width: bubbleView.width,
+                        top: bubbleView.top,
+                        left: bubbleView.left,
+                    },
+                    cameraView,
+                );
                 const x = Math.min(rect.width + rect.left, rect.left);
                 const y = Math.min(rect.height + rect.top, rect.top);
-                const cornerRadius = Math.floor(Math.min(rect.width, rect.height) / 10);
-                context.strokeStyle = getThemeSecondColor(theme);
-
+                const cornerRadius = Math.floor(Math.min(rect.width, rect.height) / (WORKSPACE_INNER_HALF_SIZE / 10));
                 context.beginPath();
                 context.moveTo(x + cornerRadius, y);
                 context.lineTo(x + rect.width - cornerRadius, y);
@@ -331,9 +329,7 @@ export const RendererProvider: React.FC<RendererProviderProps> = ({ children, is
                 context.quadraticCurveTo(x, y, x + cornerRadius, y);
                 context.closePath();
                 context.lineWidth = 3;
-                context.setLineDash([10, 10]);
                 context.stroke();
-                context.setLineDash([]);
                 // bubble name
                 context.font = '12px monggeulR';
 
@@ -345,72 +341,20 @@ export const RendererProvider: React.FC<RendererProviderProps> = ({ children, is
                 const metricName = context.measureText('⊗ ' + bubble.name);
                 bubble.nameSizeInCanvas = metricName.width;
             }
-            context.shadowColor = getThemeMainColor(theme);
-            context.shadowOffsetX = 0;
-            context.shadowOffsetY = 0;
-            // TODO curve, picture 통합 확정되면 코드 제거거
-            //     bubble.curves.forEach((curve) => {
-            //         const c = bubble2globalWithCurve(curve.position, bubbleView);
-
-            //         const beziers = catmullRom2Bezier(curve2View(c, cameraView));
-            //         applyPenConfig(context, curve.config);
-            //         setThicknessWithRatio(context, getThicknessRatio(cameraView));
-            //         if (getSelectedCurve().find((cuv) => cuv === curve)) {
-            //             context.shadowBlur = 5;
-            //         } else {
-            //             context.shadowBlur = 0;
-            //         }
-            //         context.beginPath();
-            //         // TODO: 실제 커브를 그리는 부분과 그릴지 말지 결정하는 부분 분리 할 것
-            //         if (beziers.length > 0) {
-            //             let isSweep = true;
-            //             for (let i = 0; i < beziers.length; i++) {
-            //                 context.moveTo(beziers[i].start.x, beziers[i].start.y);
-            //                 if (beziers[i].start.isVisible) {
-            //                     context.bezierCurveTo(
-            //                         beziers[i].cp1.x,
-            //                         beziers[i].cp1.y,
-            //                         beziers[i].cp2.x,
-            //                         beziers[i].cp2.y,
-            //                         beziers[i].end.x,
-            //                         beziers[i].end.y,
-            //                     );
-            //                     isSweep = false;
-            //                 }
-            //             }
-            //             // TODO sweep 로직 다른 곳으로 옮기기
-            //             if (isSweep) {
-            //                 removeCurve(bubble.path, curve);
-            //                 addCurveDeletionLog(curve, bubble.path);
-            //                 // commitLog();
-            //             }
-            //         }
-            //         context.stroke();
-            //     });
-            //     context.shadowBlur = 0;
-            //     if (bubble.pictures) {
-            //         bubble.pictures.forEach((picture) => {
-            //             if (getSelectedPictures().find((pic) => pic == picture)) context.shadowBlur = 5;
-            //             else context.shadowBlur = 0;
-            //             const position = rect2View(bubble2globalWithRect(picture as Rect, bubbleView), cameraView);
-            //             const ctx = picture.offScreen?.getContext('2d');
-            //             ctx?.drawImage(picture.image, 0, 0, OFF_SCREEN_WIDTH, OFF_SCREEN_HEIGHT);
-            //             const imageBitmap = picture.offScreen?.transferToImageBitmap(); // for android webview
-            //             if (imageBitmap)
-            //                 context.drawImage(imageBitmap, position.left, position.top, position.width, position.height);
-            //         });
-            //     }
-
-            //     context.shadowBlur = 0;
             bubble.shapes.forEach((shape) => {
                 if (shape.type === 'curve') {
-                    console.log(shape);
                     const curve = shape;
                     const c = bubble2globalWithCurve(curve.position, bubbleView);
 
                     const beziers = catmullRom2Bezier(curve2View(c, cameraView));
                     applyPenConfig(context, curve.config);
-                    setThicknessWithRatio(context, getThicknessRatio(cameraView));
+                    const ratio = getRatioWithCamera(bubble, cameraView);
+                    if (!ratio) {
+                        console.log('ratio 에러', bubble.path);
+                        return;
+                    }
+
+                    setThicknessWithRatio(context, ratio);
                     if (getSelectedCurve().find((cuv) => cuv === curve)) {
                         context.shadowBlur = 5;
                     } else {
@@ -436,8 +380,8 @@ export const RendererProvider: React.FC<RendererProviderProps> = ({ children, is
                         }
                         // TODO sweep 로직 다른 곳으로 옮기기
                         if (isSweep) {
-                            removeCurve(bubble.path, curve);
-                            addCurveDeletionLog(curve, bubble.path);
+                            removeCurve(bubble.id, curve);
+                            addCurveDeletionLog(curve, bubble.id);
                             // commitLog();
                         }
                     }
@@ -468,9 +412,8 @@ export const RendererProvider: React.FC<RendererProviderProps> = ({ children, is
         if (context) {
             context.clearRect(0, 0, canvas.width, canvas.height);
             getBubbles().forEach((bubble) => {
-                if (!bubble.isBubblized || !bubble.isVisible) return;
                 const ratio = getRatioWithCamera(bubble, cameraView);
-                if (ratio && ratio * cameraView.size.x < MINIMUN_RENDERED_BUBBLE_SIZE) {
+                if (ratio && ratio * cameraView.size.x < MINIMUN_RENDERED_BUBBLE_RATE) {
                     return;
                 }
                 const bubbleView = descendant2child(bubble, cameraView.path);

@@ -1,7 +1,7 @@
-import { GetPictureRes } from '@/api/picture';
+import { PictureRes } from '@/api/pictrues/type';
 import { OFF_SCREEN_HEIGHT, OFF_SCREEN_WIDTH } from '@/util/constant';
 
-export const pictureMapper = (pictureRes: GetPictureRes): Picture => {
+export const pictureMapper = (pictureRes: PictureRes): Picture => {
     return {
         ...pictureRes,
         type: 'picture',
