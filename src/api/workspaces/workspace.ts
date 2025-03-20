@@ -49,7 +49,7 @@ export const getAllWorkspaceAPI = async () => {
 export const updateWorkspaceAPI = async ({ workspaceId, name, theme }: UpdateWorkspacePrams) => {
     try {
         const res = await mongleApi.put<UpdateWorkspaceReq, UpdateWorkspaceRes, 'ALREADY_EXIST'>(
-            `/workspace/${workspaceId}`,
+            `/workspaces/${workspaceId}`,
             {
                 name: name,
                 theme: theme,
@@ -82,7 +82,7 @@ export const deleteWorkspaceAPI = async ({ workspaceId }: DeleteWorkspaceReq) =>
 
 export const createWorkspaceAPI = async ({ name, theme }: CreateWorkspaceReq) => {
     try {
-        const res = await mongleApi.post<CreateWorkspaceReq, CreateWorkspaceRes, 'ALREADY_EXIST'>(`/workspace`, {
+        const res = await mongleApi.post<CreateWorkspaceReq, CreateWorkspaceRes, 'ALREADY_EXIST'>(`/workspaces`, {
             name: name,
             theme: theme,
         });
