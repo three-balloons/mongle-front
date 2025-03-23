@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useCurve } from '@/objects/curve/useCurve';
 import { view2Point } from '@/util/coordSys/conversion';
 import { curve2Rect } from '@/util/shapes/conversion';
@@ -25,6 +25,9 @@ export const useEraser = () => {
     const earseModeRef = useRef<EraseMode>(eraseConfig.mode);
     const earseRadiusRef = useRef<number>(eraseConfig.radius);
     const earseAreaCurves = useRef<Array<{ origin: Curve; earsed: Curve; isModified: boolean }>>([]);
+    const modifiedCurveLog = useRef<
+        { id: number; bubbleId: number; type: 'update' | 'delete'; origin: Curve; modified: Curve }[]
+    >([]);
     const { removeCurve, removeCurvesWithId, updateCurve } = useCurve();
 
     const view2BubbleWithVector2D = useBubbleStore((state) => state.view2BubbleWithVector2D);
@@ -44,7 +47,7 @@ export const useEraser = () => {
         });
     }, []);
 
-    const startErase = useCallback((cameraView: ViewCoord) => {
+    const startErase = (cameraView: ViewCoord) => {
         // TODO 영역지우개일때 log 반영
         if (earseModeRef.current == 'area') {
             const descendants = getDescendantBubbles(cameraView.path);
@@ -56,9 +59,9 @@ export const useEraser = () => {
                     }),
             );
         }
-    }, []);
+    };
 
-    const erase = useCallback((cameraView: ViewCoord, currentPosition: Vector2D) => {
+    const erase = (cameraView: ViewCoord, currentPosition: Vector2D) => {
         if (earseModeRef.current == 'area') eraseArea(cameraView, currentPosition);
         else if (earseModeRef.current == 'stroke') eraseStroke(cameraView, currentPosition);
         else {
@@ -67,11 +70,16 @@ export const useEraser = () => {
                 eraseBubble(bubble);
             }
         }
-    }, []);
+    };
 
-    const endErase = useCallback(() => {
+    const endErase = () => {
+        modifiedCurveLog.current.map((log) => {
+            if (log.type === 'update') addCurveUpdateLog(log.origin, log.modified, log.bubbleId, log.bubbleId);
+            else if (log.type === 'delete') addCurveDeletionLog(log.modified, log.bubbleId);
+        });
+
         commitLog();
-    }, []);
+    };
 
     const eraseArea = (cameraView: ViewCoord, currentPosition: Vector2D) => {
         positionRef.current = currentPosition;
@@ -110,7 +118,21 @@ export const useEraser = () => {
             // removeCurve(path, curve);
             // addCurve(path, temp);
             // TODO update curve
-            addCurveUpdateLog(curve, updatedCurve, id, id);
+            const previous = modifiedCurveLog.current.find((log) => log.id === curve.id);
+            if (previous) {
+                previous.modified = updatedCurve;
+                previous.type = 'update';
+            } else
+                modifiedCurveLog.current = [
+                    ...modifiedCurveLog.current,
+                    {
+                        id: curve.id,
+                        bubbleId: id,
+                        type: 'update',
+                        modified: updatedCurve,
+                        origin: curve,
+                    },
+                ];
         });
     };
 
@@ -145,8 +167,22 @@ export const useEraser = () => {
 
         curveWithErasers.forEach(({ id, curve, eraser }) => {
             if (isIntersectCurveWithEraser(eraser, curve)) {
+                const previous = modifiedCurveLog.current.find((log) => log.id === curve.id);
+                if (previous) {
+                    previous.modified = curve;
+                    previous.type = 'delete';
+                } else
+                    modifiedCurveLog.current = [
+                        ...modifiedCurveLog.current,
+                        {
+                            id: curve.id,
+                            bubbleId: id,
+                            type: 'delete',
+                            modified: curve,
+                            origin: curve,
+                        },
+                    ];
                 removeCurve(id, curve);
-                addCurveDeletionLog(curve, id);
             }
         });
     };
