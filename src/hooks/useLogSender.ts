@@ -64,17 +64,17 @@ export const useLogSender = () => {
     // });
 
     /* Curves */
-    const { mutate: createCurveMutation } = useMutation({
+    const { mutateAsync: createCurveMutation } = useMutation({
         mutationFn: ({ workspaceId, bubbleId, curve }: CurveMutationProps) =>
             createCurveAPI({ workspaceId, bubbleId, curve }),
     });
 
-    const { mutate: updateCurveMutation } = useMutation({
+    const { mutateAsync: updateCurveMutation } = useMutation({
         mutationFn: ({ workspaceId, bubbleId, curve }: CurveMutationProps) =>
             updateCurveAPI({ workspaceId, bubbleId, curve }),
     });
 
-    const { mutate: deleteCurveMutation } = useMutation({
+    const { mutateAsync: deleteCurveMutation } = useMutation({
         mutationFn: ({ workspaceId, curve }: CurveMutationProps) =>
             deleteCurveAPI({
                 workspaceId,
@@ -84,7 +84,11 @@ export const useLogSender = () => {
 
     const sendLogsToServer = (isClearLog: boolean = false) => {
         const workspaceId = workspaceIdRef.current;
-        if (!workspaceId || workspaceId == 'demo') return;
+        if (!workspaceId) return;
+        if (workspaceId == 'demo') {
+            clearAllLog();
+            return;
+        }
         const checkpoint = useLogStore.getState().logs[workspaceId].checkpoint;
         const logs: Array<LogGroup> = useLogStore.getState().logs[workspaceId].redoStack;
         let currentPoint = checkpoint;
@@ -110,11 +114,12 @@ export const useLogSender = () => {
                         bubble: log.modified.object,
                     });
                 } else if (isLogCurve(log)) {
-                    createCurveMutation({
+                    const curve = await createCurveMutation({
                         workspaceId: workspaceId,
                         bubbleId: log.modified.bubbleId,
                         curve: log.modified.object,
                     });
+                    log.modified.object.id = curve.id;
                 }
                 break;
             case 'delete':
@@ -134,12 +139,13 @@ export const useLogSender = () => {
                     // removeBubble(log.modified.object);
                     // addBubble(log.origin.object, log.origin.childrenPaths);
                 } else if (isLogCurve(log)) {
-                    // TODO updateMutation반영 후 id 저장 필요
-                    updateCurveMutation({
+                    const curve = await updateCurveMutation({
                         workspaceId: workspaceId,
                         bubbleId: log.modified.bubbleId,
                         curve: log.modified.object,
                     });
+                    log.modified.object.id = curve.id;
+                    log.modified.object.position = curve.position;
                 }
                 break;
             default:

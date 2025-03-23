@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useCurve } from '@/objects/curve/useCurve';
 import { view2Point } from '@/util/coordSys/conversion';
 import { curve2Rect } from '@/util/shapes/conversion';
@@ -25,6 +25,9 @@ export const useEraser = () => {
     const earseModeRef = useRef<EraseMode>(eraseConfig.mode);
     const earseRadiusRef = useRef<number>(eraseConfig.radius);
     const earseAreaCurves = useRef<Array<{ origin: Curve; earsed: Curve; isModified: boolean }>>([]);
+    const modifiedCurveLog = useRef<
+        { id: number; bubbleId: number; type: 'update' | 'delete'; origin: Curve; modified: Curve }[]
+    >([]);
     const { removeCurve, removeCurvesWithId, updateCurve } = useCurve();
 
     const view2BubbleWithVector2D = useBubbleStore((state) => state.view2BubbleWithVector2D);
@@ -44,7 +47,7 @@ export const useEraser = () => {
         });
     }, []);
 
-    const startErase = useCallback((cameraView: ViewCoord) => {
+    const startErase = (cameraView: ViewCoord) => {
         // TODO 영역지우개일때 log 반영
         if (earseModeRef.current == 'area') {
             const descendants = getDescendantBubbles(cameraView.path);
@@ -56,9 +59,9 @@ export const useEraser = () => {
                     }),
             );
         }
-    }, []);
+    };
 
-    const erase = useCallback((cameraView: ViewCoord, currentPosition: Vector2D) => {
+    const erase = (cameraView: ViewCoord, currentPosition: Vector2D) => {
         if (earseModeRef.current == 'area') eraseArea(cameraView, currentPosition);
         else if (earseModeRef.current == 'stroke') eraseStroke(cameraView, currentPosition);
         else {
@@ -67,11 +70,16 @@ export const useEraser = () => {
                 eraseBubble(bubble);
             }
         }
-    }, []);
+    };
 
-    const endErase = useCallback(() => {
+    const endErase = () => {
+        modifiedCurveLog.current.map((log) => {
+            if (log.type === 'update') addCurveUpdateLog(log.origin, log.modified, log.bubbleId, log.bubbleId);
+            else if (log.type === 'delete') addCurveDeletionLog(log.modified, log.bubbleId);
+        });
+
         commitLog();
-    }, []);
+    };
 
     const eraseArea = (cameraView: ViewCoord, currentPosition: Vector2D) => {
         positionRef.current = currentPosition;
@@ -86,7 +94,7 @@ export const useEraser = () => {
                     .map((curve) => {
                         const position = view2Point(currentPosition, cameraView);
                         const pos = view2BubbleWithVector2D(position, cameraView, descendant.path);
-                        const scale = (getRatioWithCamera(descendant, cameraView) ?? 1) * 4;
+                        const scale = (getRatioWithCamera(descendant, cameraView) ?? 1) / 4.5;
                         return {
                             id: descendant.id,
                             curve: curve,
@@ -104,12 +112,27 @@ export const useEraser = () => {
 
         // 지워주면 됨 => log가 생기면 log씌움
         curveWithErasers.forEach(({ id, curve, eraser }) => {
-            const temp = markCurveWithEraser(eraser, curve);
-            updateCurve(id, temp);
+            const { isUpdated, curve: updatedCurve } = markCurveWithEraser(eraser, curve);
+            if (!isUpdated) return;
+            updateCurve(id, updatedCurve);
             // removeCurve(path, curve);
             // addCurve(path, temp);
             // TODO update curve
-            addCurveUpdateLog(curve, temp, id, id);
+            const previous = modifiedCurveLog.current.find((log) => log.id === curve.id);
+            if (previous) {
+                previous.modified = updatedCurve;
+                previous.type = 'update';
+            } else
+                modifiedCurveLog.current = [
+                    ...modifiedCurveLog.current,
+                    {
+                        id: curve.id,
+                        bubbleId: id,
+                        type: 'update',
+                        modified: updatedCurve,
+                        origin: curve,
+                    },
+                ];
         });
     };
 
@@ -126,7 +149,7 @@ export const useEraser = () => {
                     .map((curve) => {
                         const position = view2Point(currentPosition, cameraView);
                         const pos = view2BubbleWithVector2D(position, cameraView, descendant.path);
-                        const scale = (getRatioWithCamera(descendant, cameraView) ?? 1) * 2;
+                        const scale = (getRatioWithCamera(descendant, cameraView) ?? 1) / 4.5;
                         return {
                             id: descendant.id,
                             curve: curve,
@@ -144,15 +167,28 @@ export const useEraser = () => {
 
         curveWithErasers.forEach(({ id, curve, eraser }) => {
             if (isIntersectCurveWithEraser(eraser, curve)) {
+                const previous = modifiedCurveLog.current.find((log) => log.id === curve.id);
+                if (previous) {
+                    previous.modified = curve;
+                    previous.type = 'delete';
+                } else
+                    modifiedCurveLog.current = [
+                        ...modifiedCurveLog.current,
+                        {
+                            id: curve.id,
+                            bubbleId: id,
+                            type: 'delete',
+                            modified: curve,
+                            origin: curve,
+                        },
+                    ];
                 removeCurve(id, curve);
-                addCurveDeletionLog(curve, id);
             }
         });
     };
 
     const eraseBubble = (bubble: Bubble) => {
         // TODO 경고 창 띄우고 지우기
-        // setEraseMode('area');
         const ereaseChildBubble = (bubble: Bubble) => {
             const children = getChildBubbles(bubble.path);
             addBubbleDeletionLog(bubble, [...children.map((child) => child.id)]);
@@ -177,7 +213,6 @@ export const useEraser = () => {
     };
 
     const isIntersectCurveWithEraser = (circle: Circle, curve: Curve): boolean => {
-        // TODO 두께 고려한 지우기, radius 보정 필요
         const points = curve.position;
         for (let i = 0; i < points.length - 1; i++) {
             if (isCollisionCapsuleWithCircle({ p1: points[i], p2: points[i + 1], radius: circle.radius }, circle)) {
@@ -190,25 +225,29 @@ export const useEraser = () => {
     /**
      * curve의 control point 변경 => updateCurve
      */
-    const markCurveWithEraser = (circle: Circle, curve: Curve): Curve => {
+    const markCurveWithEraser = (circle: Circle, curve: Curve): { isUpdated: boolean; curve: Curve } => {
         const { config, position: points } = curve;
+        let isUpdated = false;
 
-        // TODO 두께 고려한 지우기, radius 보정 필요
         const updatedPoints = points.map((point, index) => {
             if (index < points.length - 1) {
                 const nextPoint = points[index + 1];
                 // 충돌 여부를 확인하고 조건이 맞으면 isVisible을 false로 변경
-                if (isCollisionCapsuleWithCircle({ p1: point, p2: nextPoint, radius: 5 }, circle)) {
+                if (isCollisionCapsuleWithCircle({ p1: point, p2: nextPoint, radius: circle.radius }, circle)) {
+                    if (point.isVisible) isUpdated = true;
                     return { ...point, isVisible: false };
                 }
             }
             return point; // 조건에 맞지 않으면 기존 point 반환
         });
         return {
-            type: 'curve',
-            config: config,
-            position: updatedPoints,
-            id: curve.id,
+            isUpdated: isUpdated,
+            curve: {
+                type: 'curve',
+                config: config,
+                position: updatedPoints,
+                id: curve.id,
+            },
         };
     };
 
