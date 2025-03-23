@@ -1,13 +1,13 @@
 /** common response */
 export type ShapeRes =
     | {
-          type: 'curve';
+          type: 'Curve';
           id: number;
           position: string;
           config: PenConfig;
       }
     | {
-          type: 'picture';
+          type: 'Picture';
           id: string;
           top: number;
           left: number;
@@ -20,7 +20,7 @@ export type ShapeRes =
           angle: number;
       }
     | {
-          type: 'pdf';
+          type: 'Pdf';
           id: string;
           top: number;
           left: number;
