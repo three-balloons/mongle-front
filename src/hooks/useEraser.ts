@@ -86,7 +86,7 @@ export const useEraser = () => {
                     .map((curve) => {
                         const position = view2Point(currentPosition, cameraView);
                         const pos = view2BubbleWithVector2D(position, cameraView, descendant.path);
-                        const scale = (getRatioWithCamera(descendant, cameraView) ?? 1) * 4;
+                        const scale = (getRatioWithCamera(descendant, cameraView) ?? 1) / 4.5;
                         return {
                             id: descendant.id,
                             curve: curve,
@@ -127,7 +127,7 @@ export const useEraser = () => {
                     .map((curve) => {
                         const position = view2Point(currentPosition, cameraView);
                         const pos = view2BubbleWithVector2D(position, cameraView, descendant.path);
-                        const scale = (getRatioWithCamera(descendant, cameraView) ?? 1) * 2;
+                        const scale = (getRatioWithCamera(descendant, cameraView) ?? 1) / 4.5;
                         return {
                             id: descendant.id,
                             curve: curve,
@@ -153,7 +153,6 @@ export const useEraser = () => {
 
     const eraseBubble = (bubble: Bubble) => {
         // TODO 경고 창 띄우고 지우기
-        // setEraseMode('area');
         const ereaseChildBubble = (bubble: Bubble) => {
             const children = getChildBubbles(bubble.path);
             addBubbleDeletionLog(bubble, [...children.map((child) => child.id)]);
@@ -178,7 +177,6 @@ export const useEraser = () => {
     };
 
     const isIntersectCurveWithEraser = (circle: Circle, curve: Curve): boolean => {
-        // TODO 두께 고려한 지우기, radius 보정 필요
         const points = curve.position;
         for (let i = 0; i < points.length - 1; i++) {
             if (isCollisionCapsuleWithCircle({ p1: points[i], p2: points[i + 1], radius: circle.radius }, circle)) {
@@ -195,12 +193,11 @@ export const useEraser = () => {
         const { config, position: points } = curve;
         let isUpdated = false;
 
-        // TODO 두께 고려한 지우기, radius 보정 필요
         const updatedPoints = points.map((point, index) => {
             if (index < points.length - 1) {
                 const nextPoint = points[index + 1];
                 // 충돌 여부를 확인하고 조건이 맞으면 isVisible을 false로 변경
-                if (isCollisionCapsuleWithCircle({ p1: point, p2: nextPoint, radius: 5 }, circle)) {
+                if (isCollisionCapsuleWithCircle({ p1: point, p2: nextPoint, radius: circle.radius }, circle)) {
                     if (point.isVisible) isUpdated = true;
                     return { ...point, isVisible: false };
                 }
